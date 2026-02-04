@@ -488,6 +488,13 @@ document.addEventListener('DOMContentLoaded', () => {
     initZenGalaxy();
     initMemoryGame();
     updateTictactoeUI();
+
+    // Initialize Google Ads after DOM is fully loaded
+    setTimeout(() => {
+        if (typeof adsbygoogle !== 'undefined') {
+            (adsbygoogle = window.adsbygoogle || []).push({});
+        }
+    }, 500);
 });
 
 // --- API Helpers (Reuse or Refine) ---
