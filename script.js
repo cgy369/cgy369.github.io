@@ -871,11 +871,26 @@ function copyPrompt() {
 }
 
 // Reset all game data
+// Reset all game data
 function resetAllGames() {
     if (confirm('⚠️ 모든 게임 데이터(점수, 나무 성장, 은하 등)가 초기화됩니다. 계속하시겠습니까?')) {
+        // 1. Stop Auto-save loops (if any)
+        // (Assuming simple structure, just clearing data is key)
+
+        // 2. Clear LocalStorage
         localStorage.clear();
+
+        // 3. Reset Memory Variables (Critical to prevent auto-save overwrite)
+        score = 0;
+        autoRate = 0;
+        multiplier = 1;
+        clickValue = 1;
+        treeGrowth = 0;
+        zenParticles = [];
+
+        // 4. Force Reload
         alert('✅ 모든 데이터가 초기화되었습니다. 페이지를 새로고침합니다.');
-        location.reload();
+        location.replace(location.href); // Hard reload
     }
 }
 

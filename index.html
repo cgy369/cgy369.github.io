@@ -228,63 +228,10 @@
                                         전체 초기화</button>
                                 </div>
 
-                                <!-- Center: Idle Tree -->
-                                <div class="center-growth">
-                                    <div id="chronosTreeContainer" class="art-tree-box">
-                                        <canvas id="treeCanvas"></canvas>
-                                        <div id="treeStatus">Growth: 0%</div>
-                                        <div class="tree-controls">
-                                            <button onclick="growTreeOnce()" class="btn-icon"
-                                                title="Nutrients">🌿</button>
-                                            <button onclick="resetTree()" class="btn-icon" title="Reset">🔄</button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Right: Clicker & Shop -->
-                                <div class="game-hub">
-                                    <div class="score-panel">
-                                        <div class="big-score">
-                                            <span id="timeScore">0</span>
-                                            <small>seconds</small>
-                                        </div>
-                                        <div class="rate-info">
-                                            <span>Rate: <b id="autoRate">0</b>/s</span>
-                                            <span>Mult: x<b id="multiplier">1</b></span>
-                                        </div>
-                                        <button id="clickBtn" class="btn-mega">EARN TIME</button>
-                                    </div>
-
-                                    <div class="upgrade-station">
-                                        <div onclick="buyUpgrade('auto1')" id="buy-auto1" class="upgrade-item">
-                                            <span class="up-icon">⚡</span>
-                                            <div class="up-info">
-                                                <b>Temporal Flux</b>
-                                                <span id="cost-auto1">15s</span>
-                                            </div>
-                                        </div>
-                                        <div onclick="buyUpgrade('auto10')" id="buy-auto10" class="upgrade-item">
-                                            <span class="up-icon">💠</span>
-                                            <div class="up-info">
-                                                <b>Quantum Gear</b>
-                                                <span id="cost-auto10">100s</span>
-                                            </div>
-                                        </div>
-                                        <div onclick="buyUpgrade('auto100')" id="buy-auto100" class="upgrade-item">
-                                            <span class="up-icon">🌀</span>
-                                            <div class="up-info">
-                                                <b>Causal Matrix</b>
-                                                <span id="cost-auto100">1000s</span>
-                                            </div>
-                                        </div>
-                                        <button id="rebirthBtn" onclick="handleRebirth()" class="btn-rebirth" disabled>
-                                            Rebirth (<span id="rebirthCount">0</span>)
-                                        </button>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                 </div>
+                <!-- End Clocks Sub-section -->
                 <!-- End Clocks Sub-section -->
 
                 <!-- Arcade Sub-section -->
@@ -314,7 +261,59 @@
                 <!-- Idle Games Sub-section -->
                 <div id="idleSubSection" class="game-sub-section">
                     <div class="spatial-games">
-                        <!-- Chronos Tree -->
+                        <!-- Center: Idle Tree -->
+                        <div class="center-growth">
+                            <div id="chronosTreeContainer" class="art-tree-box">
+                                <canvas id="treeCanvas"></canvas>
+                                <div id="treeStatus">Growth: 0%</div>
+                                <div class="tree-controls">
+                                    <button onclick="growTreeOnce()" class="btn-icon" title="Nutrients">🌿</button>
+                                    <button onclick="resetTree()" class="btn-icon" title="Reset">🔄</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Clicker & Shop -->
+                        <div class="game-hub">
+                            <div class="score-panel">
+                                <div class="big-score">
+                                    <span id="timeScore">0</span>
+                                    <small>seconds</small>
+                                </div>
+                                <div class="rate-info">
+                                    <span>Rate: <b id="autoRate">0</b>/s</span>
+                                    <span>Mult: x<b id="multiplier">1</b></span>
+                                </div>
+                                <button id="clickBtn" class="btn-mega">EARN TIME</button>
+                            </div>
+
+                            <div class="upgrade-station">
+                                <div onclick="buyUpgrade('auto1')" id="buy-auto1" class="upgrade-item">
+                                    <span class="up-icon">⚡</span>
+                                    <div class="up-info">
+                                        <b>Temporal Flux</b>
+                                        <span id="cost-auto1">15s</span>
+                                    </div>
+                                </div>
+                                <div onclick="buyUpgrade('auto10')" id="buy-auto10" class="upgrade-item">
+                                    <span class="up-icon">💠</span>
+                                    <div class="up-info">
+                                        <b>Quantum Gear</b>
+                                        <span id="cost-auto10">100s</span>
+                                    </div>
+                                </div>
+                                <div onclick="buyUpgrade('auto100')" id="buy-auto100" class="upgrade-item">
+                                    <span class="up-icon">🌀</span>
+                                    <div class="up-info">
+                                        <b>Causal Matrix</b>
+                                        <span id="cost-auto100">1000s</span>
+                                    </div>
+                                </div>
+                                <button id="rebirthBtn" onclick="handleRebirth()" class="btn-rebirth" disabled>
+                                    Rebirth (<span id="rebirthCount">0</span>)
+                                </button>
+                            </div>
+                        </div>
 
                         <!-- Bottom: Zen Galaxy Full Width -->
                         <div class="zen-landscape">
