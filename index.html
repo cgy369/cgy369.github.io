@@ -4,103 +4,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Birth Discovery - 당신의 운명과 역사를 발견하세요</title>
+    <title>타임킬러 허브 - 당신의 시간을 즐겁게 채워보세요</title>
+    <meta name="description" content="생일 정보 발견, 일일 퀴즈, 랜덤 상식, 그리고 고난도 틱택토까지! 시간이 순삭되는 타임킬러 허브에서 즐거운 시간을 보내세요.">
+    <meta name="keywords" content="타임킬러, 심심풀이, 생일 발견, 퀴즈, 상식, 틱택토, 미니게임, 오늘의 역사">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://birth-discovery.vercel.app/">
+    <meta property="og:title" content="타임킬러 허브 - 시간이 순삭되는 곳">
+    <meta property="og:description" content="퀴즈, 상식, 미니게임으로 심심한 시간을 즐거움으로 채우세요.">
+    <meta property="og:image" content="https://birth-discovery.vercel.app/og-image.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="타임킬러 허브 - 시간이 순삭되는 곳">
+    <meta property="twitter:description" content="퀴즈, 상식, 미니게임으로 심심한 시간을 즐거움으로 채우세요.">
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "타임킬러 허브",
+      "url": "https://birth-discovery.vercel.app/",
+      "description": "심심할 때 즐기는 퀴즈, 상식, 역사 정보 및 미니게임 종합 허브",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://birth-discovery.vercel.app/search?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "타임킬러 게임즈",
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "Web",
+      "featureList": ["틱택토", "메모리 게임", "일일 퀴즈"]
+    }
+    </script>
+
     <link rel="stylesheet" href="style.css">
-    <!-- Google AdSense - 아래 ca-pub-ID를 본인의 ID로 교환하세요 -->
+    <!-- Google AdSense -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7237384529818812"
         crossorigin="anonymous"></script>
 </head>
 
 <body>
     <div class="container">
-        <h1>Birth Discovery</h1>
-        <p class="subtitle">당신이 태어난 날의 비밀을 확인해보세요</p>
+        <header>
+            <h1 id="mainTitle">타임킬러 허브</h1>
+            <p class="subtitle" id="mainSubtitle">심심할 땐 여기! 지루할 틈 없는 즐길거리</p>
+        </header>
 
-        <section class="input-section">
-            <input type="date" id="birthDate" class="date-picker">
-            <button onclick="discover()" class="btn-discover">비밀 확인하기</button>
-        </section>
+        <nav class="tabs-nav">
+            <button class="tab-btn active" onclick="switchTab('daily')">오늘의 즐거움</button>
+            <button class="tab-btn" onclick="switchTab('discovery')">생일의 발견</button>
+            <button class="tab-btn" onclick="switchTab('games')">미니게임</button>
+        </nav>
 
-        <!-- 상단 가로형 광고 -->
-        <div class="ad-container">
-            <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7237384529818812"
-                data-ad-slot="3580735781" data-ad-format="horizontal" data-full-width-responsive="true"></ins>
-            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        <!-- 탭 컨텐츠 영역 -->
+        <main class="tab-content">
+            <!-- [오늘의 즐거움] 섹션 -->
+            <section id="dailySection" class="content-section active">
+                <div class="daily-grid">
+                    <div class="daily-card trivia-card">
+                        <div class="card-icon">❓</div>
+                        <h3>오늘의 퀴즈</h3>
+                        <div id="triviaContent" class="card-body">가져오는 중...</div>
+                        <button onclick="fetchTrivia()" class="btn-refresh">새 퀴즈</button>
+                    </div>
+                    <div class="daily-card fact-card">
+                        <div class="card-icon">💡</div>
+                        <h3>랜덤 상식</h3>
+                        <div id="factContent" class="card-body">가져오는 중...</div>
+                        <button onclick="fetchFact()" class="btn-refresh">다른 상식</button>
+                    </div>
+                    <div class="daily-card history-card">
+                        <div class="card-icon">📜</div>
+                        <h3>오늘의 역사</h3>
+                        <div id="dailyHistoryContent" class="card-body">가져오는 중...</div>
+                    </div>
+                    <div class="daily-card fortune-card">
+                        <div class="card-icon">🍀</div>
+                        <h3>오늘의 행운</h3>
+                        <div id="fortuneContent" class="card-body">운세를 점쳐보세요</div>
+                        <button onclick="revealFortune()" class="btn-refresh">운세 확인</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- [생일의 발견] 섹션 -->
+            <section id="discoverySection" class="content-section">
+                <div class="input-section">
+                    <input type="date" id="birthDate" class="date-picker">
+                    <button onclick="discover()" class="btn-discover">비밀 확인하기</button>
+                </div>
+                <!-- 결과 부분은 기존과 동일하게 유지하되 ID로 관리 -->
+                <div id="resultSection" class="result-section">
+                    <!-- ... 기존 코드 내용이 들어갈 자리 ... -->
+                </div>
+            </section>
+
+            <!-- [미니게임] 섹션 -->
+            <section id="gamesSection" class="content-section">
+                <!-- 기존 틱택토 게임 포함 -->
+                <div class="game-section">
+                    <!-- ... 기존 틱택토 코드 ... -->
+                </div>
+
+                <!-- 타임 킬러 클리커 추가 -->
+                <div id="clickerGameSection" class="game-section">
+                    <h3>타임 킬러 클리커</h3>
+                    <p class="level-desc">클릭해서 시간을 벌고 장비를 업그레이드하세요!</p>
+                    <div class="clicker-main">
+                        <div class="score-display">
+                            <span id="timeScore">0</span> <small>초</small>
+                        </div>
+                        <button id="clickBtn" class="click-btn">⏳ 시간 벌기</button>
+                        <div class="auto-rate">자동 획득: <span id="autoRate">0</span>초/초</div>
+                    </div>
+                    <div class="clicker-shop">
+                        <div class="shop-item" onclick="buyUpgrade('auto1')">
+                            <div class="item-info">
+                                <span class="item-name">손목 시계</span>
+                                <span class="item-desc">1초당 1초 자동 획득</span>
+                            </div>
+                            <button id="buy-auto1" class="btn-buy">구매 (15초)</button>
+                        </div>
+                        <div class="shop-item" onclick="buyUpgrade('auto10')">
+                            <div class="item-info">
+                                <span class="item-name">스마트 시계</span>
+                                <span class="item-desc">1초당 10초 자동 획득</span>
+                            </div>
+                            <button id="buy-auto10" class="btn-buy">구매 (100초)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 신규 메모리 게임 추가 예정 -->
+                <div id="memoryGameSection" class="game-section">
+                    <h3>카드 뒤집기 메모리 게임</h3>
+                    <div id="memoryBoard" class="memory-board"></div>
+                    <button onclick="initMemoryGame()" class="btn-reset">게임 시작</button>
+                </div>
+            </section>
+        </main>
+        <div class="zodiac-card">
+            <div id="zodiacName" class="zodiac-name"></div>
+            <div id="zodiacDetails" class="zodiac-details"></div>
+
+            <div class="elements-grid">
+                <div class="element-item">
+                    <span class="element-label">오늘의 탄생석</span>
+                    <div id="birthStone" class="element-value"></div>
+                </div>
+                <div class="element-item">
+                    <span class="element-label">오늘의 탄생화</span>
+                    <div id="birthFlower" class="element-value"></div>
+                    <div id="flowerMeaning" class="element-meaning"></div>
+                </div>
+            </div>
+
+            <div class="population-section" id="populationSection">
+                <h3 style="margin-bottom: 1.5rem;">당신과 운명을 함께 시작한 친구들</h3>
+                <div class="stats-grid" id="statsGrid">
+                    <!-- Stats will be populated here -->
+                </div>
+                <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 1rem;">* 실제 통계 데이터를 기반으로 한 추정치입니다.
+                </p>
+            </div>
+
+            <div class="prompt-box">
+                <h3>당신의 운명을 그려보세요 (AI 매직 프롬프트)</h3>
+                <p class="prompt-desc">DALL-E, Midjourney 등 AI 이미지 생성기에 아래 프롬프트를 입력해보세요.</p>
+                <div class="prompt-container">
+                    <code id="aiPromptText"></code>
+                    <button onclick="copyPrompt()" class="btn-copy">복사하기</button>
+                </div>
+            </div>
+
+            <div class="game-section">
+                <div class="game-header">
+                    <span class="level-badge" id="levelBadge">LV 1</span>
+                    <h3 class="game-title">업그레이드 틱택토</h3>
+                </div>
+
+                <div class="game-layout">
+                    <div class="game-main">
+                        <p class="level-desc" id="levelDesc">기본 틱택토: 3줄을 먼저 완성하세요!</p>
+                        <div class="game-status" id="gameStatus">당신의 차례입니다 (X)</div>
+                        <div class="tictactoe-board" id="board">
+                            <!-- Cells will be generated by JS -->
+                        </div>
+                        <button onclick="resetGame()" class="btn-reset">게임 다시 시작</button>
+                    </div>
+
+                    <div class="records-panel">
+                        <h4>🌍 전체 도전 기록</h4>
+                        <div id="recordsList" class="records-list">
+                            <!-- Records will be populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- <img id="zodiacImage" src="" alt="Zodiac Image" class="generated-image"> -->
+
+            <div class="event-list" id="eventList">
+                <!-- Events will be populated here -->
+            </div>
         </div>
 
-        <section id="resultSection" class="result-section">
-            <div class="zodiac-card">
-                <div id="zodiacName" class="zodiac-name"></div>
-                <div id="zodiacDetails" class="zodiac-details"></div>
+        <!-- 하단 반응형 광고 -->
+        <div class="ad-container">
+            <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7237384529818812"
+                data-ad-slot="3580735781" data-ad-format="auto" data-full-width-responsive="true"></ins>
 
-                <div class="elements-grid">
-                    <div class="element-item">
-                        <span class="element-label">오늘의 탄생석</span>
-                        <div id="birthStone" class="element-value"></div>
-                    </div>
-                    <div class="element-item">
-                        <span class="element-label">오늘의 탄생화</span>
-                        <div id="birthFlower" class="element-value"></div>
-                        <div id="flowerMeaning" class="element-meaning"></div>
-                    </div>
-                </div>
-
-                <div class="population-section" id="populationSection">
-                    <h3 style="margin-bottom: 1.5rem;">당신과 운명을 함께 시작한 친구들</h3>
-                    <div class="stats-grid" id="statsGrid">
-                        <!-- Stats will be populated here -->
-                    </div>
-                    <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 1rem;">* 실제 통계 데이터를 기반으로 한 추정치입니다.
-                    </p>
-                </div>
-
-                <div class="prompt-box">
-                    <h3>당신의 운명을 그려보세요 (AI 매직 프롬프트)</h3>
-                    <p class="prompt-desc">DALL-E, Midjourney 등 AI 이미지 생성기에 아래 프롬프트를 입력해보세요.</p>
-                    <div class="prompt-container">
-                        <code id="aiPromptText"></code>
-                        <button onclick="copyPrompt()" class="btn-copy">복사하기</button>
-                    </div>
-                </div>
-
-                <div class="game-section">
-                    <div class="game-header">
-                        <span class="level-badge" id="levelBadge">LV 1</span>
-                        <h3 class="game-title">업그레이드 틱택토</h3>
-                    </div>
-
-                    <div class="game-layout">
-                        <div class="game-main">
-                            <p class="level-desc" id="levelDesc">기본 틱택토: 3줄을 먼저 완성하세요!</p>
-                            <div class="game-status" id="gameStatus">당신의 차례입니다 (X)</div>
-                            <div class="tictactoe-board" id="board">
-                                <!-- Cells will be generated by JS -->
-                            </div>
-                            <button onclick="resetGame()" class="btn-reset">게임 다시 시작</button>
-                        </div>
-
-                        <div class="records-panel">
-                            <h4>🌍 전체 도전 기록</h4>
-                            <div id="recordsList" class="records-list">
-                                <!-- Records will be populated by JS -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- <img id="zodiacImage" src="" alt="Zodiac Image" class="generated-image"> -->
-
-                <div class="event-list" id="eventList">
-                    <!-- Events will be populated here -->
-                </div>
-            </div>
-
-            <!-- 하단 반응형 광고 -->
-            <div class="ad-container">
-                <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7237384529818812"
-                    data-ad-slot="3580735781" data-ad-format="auto" data-full-width-responsive="true"></ins>
-
-            </div>
+        </div>
         </section>
     </div>
     <script src="script.js"></script>

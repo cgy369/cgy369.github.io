@@ -9,6 +9,84 @@ const HISTORICAL_BIRTHS = {
     2020: { "Global": 134000000, "KR": 270000, "US": 3600000, "CN": 12000000, "IN": 24000000, "JP": 840000 }
 };
 
+// --- Tab System ---
+function switchTab(tabId) {
+    document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+
+    document.getElementById(`${tabId}Section`).classList.add('active');
+    document.querySelector(`.tab-btn[onclick="switchTab('${tabId}')"]`).classList.add('active');
+
+    // UI Feedback for main title
+    const titles = {
+        'daily': { main: '오늘의 즐거움', sub: '매일 새로운 상식과 퀴즈로 두뇌를 깨워보세요' },
+        'discovery': { main: '생일의 발견', sub: '당신이 태어난 날의 비밀을 확인해보세요' },
+        'games': { main: '미니게임 창고', sub: '기록을 갱신하고 두뇌 게임을 즐겨보세요' }
+    };
+    if (titles[tabId]) {
+        document.getElementById('mainTitle').innerText = titles[tabId].main;
+        document.getElementById('mainSubtitle').innerText = titles[tabId].sub;
+    }
+}
+
+// --- Daily Fun APIs ---
+async function fetchTrivia() {
+    const content = document.getElementById('triviaContent');
+    content.innerText = "문제를 내는 중...";
+    try {
+        const res = await fetch('https://opentdb.com/api.php?amount=1&type=multiple');
+        const data = await res.json();
+        if (data.results && data.results.length > 0) {
+            const q = data.results[0];
+            content.innerHTML = `
+                <div style="font-weight: bold; margin-bottom: 0.5rem;">[${q.category}]</div>
+                <div>${q.question}</div>
+                <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 1rem;">* 정답은 마우스를 올리면 보입니다.</div>
+                <div class="answer-hint" title="${q.correct_answer}" style="cursor: help; color: transparent;">${q.correct_answer}</div>
+            `;
+        }
+    } catch (e) { content.innerText = "퀴즈를 가져오지 못했습니다."; }
+}
+
+async function fetchFact() {
+    const content = document.getElementById('factContent');
+    content.innerText = "상식을 찾는 중...";
+    try {
+        const res = await fetch('https://uselessfacts.jsph.pl/random.json?language=en');
+        const data = await res.json();
+        content.innerText = data.text;
+    } catch (e) { content.innerText = "상식을 가져오지 못했습니다."; }
+}
+
+async function fetchDailyHistory() {
+    const content = document.getElementById('dailyHistoryContent');
+    const today = new Date();
+    const month = today.getMonth() + 1;
+    const day = today.getDate();
+    try {
+        const titleKO = `${month}월_${day}일`;
+        const resKO = await fetch(`https://ko.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(titleKO)}&prop=wikitext&format=json&origin=*`);
+        const dataKO = await resKO.json();
+        if (dataKO.parse) {
+            const events = parseWiki(dataKO.parse.wikitext['*'], 0, 'ko').slice(0, 3); // Get 3 random/top events
+            content.innerHTML = events.map(e => `<div>• ${e.text.replace('[사건] ', '')}</div>`).join('');
+        }
+    } catch (e) { content.innerText = "역사 정보를 가져오지 못했습니다."; }
+}
+
+function revealFortune() {
+    const fortunes = [
+        "오늘의 당신은 매우 빛날 운명입니다! 새로운 도전을 시작해보세요.",
+        "작은 인연이 큰 행복으로 다가오는 날입니다. 주변 사람에게 먼저 인사해보세요.",
+        "생각지도 못한 곳에서 행운의 소식이 들려올 거예요. 차분히 기다려보세요.",
+        "오늘은 휴식이 필요한 날입니다. 좋아하는 음악과 함께 여유를 즐기세요.",
+        "긍정적인 생각만 하세요! 당신의 긍정적인 에너지가 행운을 불러옵니다.",
+        "잊고 있던 무언가를 발견하게 될 날입니다. 책상 정리를 해보는 건 어떨까요?",
+        "오늘은 직관이 뛰어난 날입니다. 당신의 선택을 믿으세요."
+    ];
+    document.getElementById('fortuneContent').innerText = fortunes[Math.floor(Math.random() * fortunes.length)];
+}
+
 function calculateLocalZodiac(year) {
     const gan = ["경", "신", "임", "계", "갑", "을", "병", "정", "무", "기"];
     const ji = ["신", "유", "술", "해", "자", "축", "인", "묘", "진", "사", "오", "미"];
@@ -85,7 +163,11 @@ function parseWiki(text, targetYear, lang) {
     const results = [];
     const lines = text.split('\n');
     let section = "";
-    const yearPattern = lang === 'ko' ? new RegExp(`\\[\\[${targetYear}년\\]\\]|${targetYear}년`) : new RegExp(`\\[\\[${targetYear}\\]\\]|${targetYear}`);
+
+    // If targetYear is 0, we match all years (for Daily History)
+    const yearPattern = targetYear === 0
+        ? (lang === 'ko' ? /[0-9]+년/ : /[0-9]+/)
+        : (lang === 'ko' ? new RegExp(`\\[\\[${targetYear}년\\]\\]|${targetYear}년`) : new RegExp(`\\[\\[${targetYear}\\]\\]|${targetYear}`));
 
     for (let line of lines) {
         const trimmed = line.trim();
@@ -778,8 +860,128 @@ function rotateBoard() {
     }, 500);
 }
 
+// --- Memory Game Logic ---
+let memoryCards = [];
+let flippedCards = [];
+let matchedCount = 0;
+const emojis = ["🍎", "🍐", "🍋", "🍌", "🍉", "🍇", "🍓", "🫐"];
+
+function initMemoryGame() {
+    const board = document.getElementById('memoryBoard');
+    board.innerHTML = "";
+    memoryCards = [...emojis, ...emojis].sort(() => Math.random() - 0.5);
+    flippedCards = [];
+    matchedCount = 0;
+
+    memoryCards.forEach((emoji, index) => {
+        const card = document.createElement('div');
+        card.className = "memory-card";
+        card.dataset.index = index;
+        card.dataset.emoji = emoji;
+        card.innerText = "?";
+        card.addEventListener('click', flipMemoryCard);
+        board.appendChild(card);
+    });
+}
+
+function flipMemoryCard() {
+    if (flippedCards.length === 2 || this.classList.contains('flipped')) return;
+
+    this.innerText = this.dataset.emoji;
+    this.classList.add('flipped');
+    flippedCards.push(this);
+
+    if (flippedCards.length === 2) {
+        if (flippedCards[0].dataset.emoji === flippedCards[1].dataset.emoji) {
+            matchedCount++;
+            flippedCards = [];
+            if (matchedCount === emojis.length) {
+                setTimeout(() => alert("축하합니다! 모든 카드를 맞추셨습니다."), 300);
+            }
+        } else {
+            setTimeout(() => {
+                flippedCards.forEach(c => {
+                    c.innerText = "?";
+                    c.classList.remove('flipped');
+                });
+                flippedCards = [];
+            }, 800);
+        }
+    }
+}
+
+// --- Clicker (Idle) Game Logic ---
+let seconds = 0;
+let autoSecondsPerSecond = 0;
+const upgradeCosts = {
+    auto1: 15,
+    auto10: 100
+};
+const upgradeOwned = {
+    auto1: 0,
+    auto10: 0
+};
+
+function updateClickerUI() {
+    const scoreEl = document.getElementById('timeScore');
+    const autoEl = document.getElementById('autoRate');
+    if (scoreEl) scoreEl.innerText = Math.floor(seconds).toLocaleString();
+    if (autoEl) autoEl.innerText = autoSecondsPerSecond.toLocaleString();
+
+    // Update shop buttons
+    for (const id in upgradeCosts) {
+        const btn = document.getElementById(`buy-${id}`);
+        if (btn) {
+            btn.disabled = seconds < upgradeCosts[id];
+            btn.innerText = `구매 (${upgradeCosts[id]}초) - 보유: ${upgradeOwned[id]}`;
+        }
+    }
+}
+
+function buyUpgrade(id) {
+    if (seconds >= upgradeCosts[id]) {
+        seconds -= upgradeCosts[id];
+        upgradeOwned[id]++;
+
+        if (id === 'auto1') autoSecondsPerSecond += 1;
+        if (id === 'auto10') autoSecondsPerSecond += 10;
+
+        // Increase cost (exponential growth)
+        upgradeCosts[id] = Math.floor(upgradeCosts[id] * 1.25);
+
+        updateClickerUI();
+    }
+}
+
+function startIdleTimer() {
+    setInterval(() => {
+        if (autoSecondsPerSecond > 0) {
+            seconds += autoSecondsPerSecond / 10; // Update every 100ms
+            updateClickerUI();
+        }
+    }, 100);
+}
+
 // Initial binding
 document.addEventListener('DOMContentLoaded', () => {
+    // Set default tab
+    switchTab('daily');
+
+    // Initial Daily Fun Data
+    fetchTrivia();
+    fetchFact();
+    fetchDailyHistory();
+
+    // Clicker Game Binding
+    const clickBtn = document.getElementById('clickBtn');
+    if (clickBtn) {
+        clickBtn.addEventListener('click', () => {
+            seconds += 1;
+            updateClickerUI();
+        });
+    }
+    startIdleTimer();
+
     loadGameRecords();
     resetGame(true); // Call once to setup LV 1
 });
