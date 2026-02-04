@@ -241,9 +241,6 @@ function buyUpgrade(id) {
     }
 }
 
-    }
-}
-
 function toggleAutoEvolve() {
     gameState.autoEvolve = document.getElementById('autoEvolveToggle').checked;
     if (gameState.autoEvolve) {
