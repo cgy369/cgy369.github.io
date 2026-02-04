@@ -107,223 +107,217 @@
                                 <div id="flowerMeaning" class="element-meaning"
                                     style="font-size: 0.9rem; color: var(--text-dim);"></div>
                             </div>
-                            <!-- Main Stage -->
-                            <main class="main-stage">
-                                <header class="stage-header">
-                                    <div class="header-content">
-                                        <h1 id="mainTitle">Daily Fun</h1>
-                                        <p id="mainSubtitle" class="subtitle">매일 새로운 상식과 퀴즈로 두뇌를 깨워보세요</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Main Stage -->
+            <main class="main-stage">
+                <header class="stage-header">
+                    <div class="header-content">
+                        <h1 id="mainTitle">Daily Fun</h1>
+                        <p id="mainSubtitle" class="subtitle">매일 새로운 상식과 퀴즈로 두뇌를 깨워보세요</p>
+                    </div>
+                    <div class="user-stats">
+                        <div class="stat-badge">
+                            <span class="label">SCORE</span>
+                            <span id="headerScore" class="value">0</span>
+                        </div>
+                    </div>
+                </header>
+
+                <div id="contentModules" class="content-modules">
+                    <!-- Section: Daily Fun -->
+                    <section id="dailySection" class="stage-module active">
+                        <div class="art-grid">
+                            <div class="art-card trivia-card">
+                                <div class="card-tag">Trivia</div>
+                                <div id="triviaContent" class="card-body">가져오는 중...</div>
+                                <button onclick="fetchTrivia()" class="btn-mini">Refresh</button>
+                            </div>
+                            <div class="art-card fact-card">
+                                <div class="card-tag">Useless Fact</div>
+                                <div id="factContent" class="card-body">상식을 가져오는 중...</div>
+                                <button onclick="fetchFact()" class="btn-mini">Next</button>
+                            </div>
+                            <div class="art-card fortune-card">
+                                <div class="card-tag">Fortune</div>
+                                <div id="fortuneContent" class="card-body">오늘의 운세는 어떨까요?</div>
+                                <button onclick="revealFortune()" class="btn-refresh">확인하기</button>
+                            </div>
+                            <div class="art-card history-card">
+                                <div class="card-tag">History</div>
+                                <div id="dailyHistoryContent" class="card-body">역사를 가져오는 중...</div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Section: Birth Discovery -->
+                    <section id="discoverySection" class="stage-module">
+                        <div class="discovery-station">
+                            <div class="input-panel">
+                                <h2>Birth Secret</h2>
+                                <p>당신이 태어난 날의 비밀을 공간에 펼칩니다.</p>
+                                <div class="input-group">
+                                    <input type="date" id="birthDate" class="premium-input">
+                                    <button onclick="discover()" class="btn-glow">Discover</button>
+                                </div>
+                            </div>
+
+                            <div id="resultSection" class="result-landscape">
+                                <div class="result-cluster">
+                                    <div class="res-card main-res">
+                                        <div id="zodiacName" class="res-title">-</div>
+                                        <p id="zodiacDetails">-</p>
                                     </div>
-                                    <div class="user-stats">
-                                        <div class="stat-badge">
-                                            <span class="label">SCORE</span>
-                                            <span id="headerScore" class="value">0</span>
+                                    <div class="res-card sub-res">
+                                        <div class="res-item">
+                                            <span class="label">Birthstone</span>
+                                            <b id="birthStone">-</b>
                                         </div>
+                                        <div class="res-item">
+                                            <span class="label">Flower</span>
+                                            <b id="birthFlower">-</b>
+                                        </div>
+                                        <p id="flowerMeaning" class="small-text"></p>
                                     </div>
-                                </header>
-
-                                <div id="contentModules" class="content-modules">
-                                    <!-- Section: Daily Fun -->
-                                    <section id="dailySection" class="stage-module active">
-                                        <div class="art-grid">
-                                            <div class="art-card trivia-card">
-                                                <div class="card-tag">Trivia</div>
-                                                <div id="triviaContent" class="card-body">가져오는 중...</div>
-                                                <button onclick="fetchTrivia()" class="btn-mini">Refresh</button>
-                                            </div>
-                                            <div class="art-card fact-card">
-                                                <div class="card-tag">Useless Fact</div>
-                                                <div id="factContent" class="card-body">상식을 가져오는 중...</div>
-                                                <button onclick="fetchFact()" class="btn-mini">Next</button>
-                                            </div>
-                                            <div class="art-card fortune-card">
-                                                <div class="card-tag">Fortune</div>
-                                                <div id="fortuneContent" class="card-body">오늘의 운세는 어떨까요?</div>
-                                                <button onclick="revealFortune()" class="btn-refresh">확인하기</button>
-                                            </div>
-                                            <div class="art-card history-card">
-                                                <div class="card-tag">History</div>
-                                                <div id="dailyHistoryContent" class="card-body">역사를 가져오는 중...</div>
-                                            </div>
-                                        </div>
-                                    </section>
-
-                                    <!-- Section: Birth Discovery -->
-                                    <section id="discoverySection" class="stage-module">
-                                        <div class="discovery-station">
-                                            <div class="input-panel">
-                                                <h2>Birth Secret</h2>
-                                                <p>당신이 태어난 날의 비밀을 공간에 펼칩니다.</p>
-                                                <div class="input-group">
-                                                    <input type="date" id="birthDate" class="premium-input">
-                                                    <button onclick="discover()" class="btn-glow">Discover</button>
-                                                </div>
-                                            </div>
-
-                                            <div id="resultSection" class="result-landscape">
-                                                <div class="result-cluster">
-                                                    <div class="res-card main-res">
-                                                        <div id="zodiacName" class="res-title">-</div>
-                                                        <p id="zodiacDetails">-</p>
-                                                    </div>
-                                                    <div class="res-card sub-res">
-                                                        <div class="res-item">
-                                                            <span class="label">Birthstone</span>
-                                                            <b id="birthStone">-</b>
-                                                        </div>
-                                                        <div class="res-item">
-                                                            <span class="label">Flower</span>
-                                                            <b id="birthFlower">-</b>
-                                                        </div>
-                                                        <p id="flowerMeaning" class="small-text"></p>
-                                                    </div>
-                                                </div>
-
-                                                <div id="statsGrid" class="stats-landscape"></div>
-
-                                                <div id="eventList" class="wiki-landscape"></div>
-
-                                                <div class="prompt-panel">
-                                                    <h3>AI Artist Prompt</h3>
-                                                    <div id="aiPromptText" class="prompt-box">-</div>
-                                                    <button onclick="copyPrompt()" class="btn-mini">Copy Prompt</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </section>
-
-                                    <!-- Section: Clock & Games -->
-                                    <section id="gamesSection" class="stage-module">
-                                        <div class="spatial-games">
-                                            <!-- Left: Core Clock Control -->
-                                            <div class="clock-control-panel">
-                                                <div class="clock-display-area">
-                                                    <div id="digitalView" class="digital-glow">00:00:00</div>
-                                                    <canvas id="clockCanvas"></canvas>
-                                                </div>
-                                                <div class="selector-grid">
-                                                    <button onclick="setClockType('analog')"
-                                                        class="selector-btn active">Analog</button>
-                                                    <button onclick="setClockType('digital')"
-                                                        class="selector-btn">Digital</button>
-                                                    <button onclick="setClockType('sundial')"
-                                                        class="selector-btn">Sundial</button>
-                                                    <button onclick="setClockType('water')"
-                                                        class="selector-btn">Water</button>
-                                                </div>
-                                            </div>
-
-                                            <!-- Center: Idle Tree -->
-                                            <div class="center-growth">
-                                                <div id="chronosTreeContainer" class="art-tree-box">
-                                                    <canvas id="treeCanvas"></canvas>
-                                                    <div id="treeStatus">Growth: 0%</div>
-                                                    <div class="tree-controls">
-                                                        <button onclick="growTreeOnce()" class="btn-icon"
-                                                            title="Nutrients">🌿</button>
-                                                        <button onclick="resetTree()" class="btn-icon"
-                                                            title="Reset">🔄</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <!-- Right: Clicker & Shop -->
-                                            <div class="game-hub">
-                                                <div class="score-panel">
-                                                    <div class="big-score">
-                                                        <span id="timeScore">0</span>
-                                                        <small>seconds</small>
-                                                    </div>
-                                                    <div class="rate-info">
-                                                        <span>Rate: <b id="autoRate">0</b>/s</span>
-                                                        <span>Mult: x<b id="multiplier">1</b></span>
-                                                    </div>
-                                                    <button id="clickBtn" class="btn-mega">EARN TIME</button>
-                                                </div>
-
-                                                <div class="upgrade-station">
-                                                    <div onclick="buyUpgrade('auto1')" id="buy-auto1"
-                                                        class="upgrade-item">
-                                                        <span class="up-icon">⚡</span>
-                                                        <div class="up-info">
-                                                            <b>Temporal Flux</b>
-                                                            <span id="cost-auto1">15s</span>
-                                                        </div>
-                                                    </div>
-                                                    <div onclick="buyUpgrade('auto10')" id="buy-auto10"
-                                                        class="upgrade-item">
-                                                        <span class="up-icon">💠</span>
-                                                        <div class="up-info">
-                                                            <b>Quantum Gear</b>
-                                                            <span id="cost-auto10">100s</span>
-                                                        </div>
-                                                    </div>
-                                                    <div onclick="buyUpgrade('auto100')" id="buy-auto100"
-                                                        class="upgrade-item">
-                                                        <span class="up-icon">🌀</span>
-                                                        <div class="up-info">
-                                                            <b>Causal Matrix</b>
-                                                            <span id="cost-auto100">1000s</span>
-                                                        </div>
-                                                    </div>
-                                                    <button id="rebirthBtn" onclick="handleRebirth()"
-                                                        class="btn-rebirth" disabled>
-                                                        Rebirth (<span id="rebirthCount">0</span>)
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- New: Classic Lounge Area -->
-                                        <div class="classic-lounge">
-                                            <div class="art-card tictactoe-card">
-                                                <div class="card-tag">Tic Tac Toe</div>
-                                                <div class="game-header-mini">
-                                                    <span id="levelBadge" class="level-badge">LV 1</span>
-                                                    <button onclick="resetGame()" class="btn-mini">Reset</button>
-                                                </div>
-                                                <div id="board" class="tictactoe-board"></div>
-                                                <div id="recordsList" class="records-mini-panel"></div>
-                                            </div>
-
-                                            <div class="art-card memory-card-module">
-                                                <div class="card-tag">Memory Game</div>
-                                                <button onclick="initMemoryGame()" class="btn-refresh">New Game</button>
-                                                <div id="memoryBoard" class="memory-board"></div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Bottom: Zen Galaxy Full Width -->
-                                        <div class="zen-landscape">
-                                            <div class="zen-header">
-                                                <h3>Zen Galaxy Simulation</h3>
-                                                <div class="zen-ctrls">
-                                                    <button onclick="toggleZenMode()" id="zenToggleBtn"
-                                                        class="btn-mini">Start Journey</button>
-                                                    <button onclick="resetZenParticles()"
-                                                        class="btn-mini">Reset</button>
-                                                </div>
-                                            </div>
-                                            <div id="zenGalaxyContainer" class="zen-box">
-                                                <canvas id="zenCanvas"></canvas>
-                                                <div id="zenCounter">Particles: 0</div>
-                                            </div>
-                                        </div>
-                                    </section>
                                 </div>
 
-                                <!-- Global Ad Space -->
-                                <footer class="stage-footer">
-                                    <div class="ad-placement" id="mainAdSlot">
-                                        <ins class="adsbygoogle" style="display:block; min-height:90px;"
-                                            data-ad-client="ca-pub-7237384529818812" data-ad-slot="3580735781"
-                                            data-ad-format="auto" data-full-width-responsive="true"></ins>
-                                    </div>
-                                    <p style="margin-top: 1rem;">&copy; 2026 Time Killer Hub. All Rights Reserved.</p>
-                                </footer>
-                            </main>
+                                <div id="statsGrid" class="stats-landscape"></div>
+
+                                <div id="eventList" class="wiki-landscape"></div>
+
+                                <div class="prompt-panel">
+                                    <h3>AI Artist Prompt</h3>
+                                    <div id="aiPromptText" class="prompt-box">-</div>
+                                    <button onclick="copyPrompt()" class="btn-mini">Copy Prompt</button>
+                                </div>
+                            </div>
                         </div>
-                        <script src="script.js"></script>
+                    </section>
+
+                    <!-- Section: Clock & Games -->
+                    <section id="gamesSection" class="stage-module">
+                        <div class="spatial-games">
+                            <!-- Left: Core Clock Control -->
+                            <div class="clock-control-panel">
+                                <div class="clock-display-area">
+                                    <div id="digitalView" class="digital-glow">00:00:00</div>
+                                    <canvas id="clockCanvas"></canvas>
+                                </div>
+                                <div class="selector-grid">
+                                    <button onclick="setClockType('analog')" class="selector-btn active">Analog</button>
+                                    <button onclick="setClockType('digital')" class="selector-btn">Digital</button>
+                                    <button onclick="setClockType('sundial')" class="selector-btn">Sundial</button>
+                                    <button onclick="setClockType('water')" class="selector-btn">Water</button>
+                                </div>
+                            </div>
+
+                            <!-- Center: Idle Tree -->
+                            <div class="center-growth">
+                                <div id="chronosTreeContainer" class="art-tree-box">
+                                    <canvas id="treeCanvas"></canvas>
+                                    <div id="treeStatus">Growth: 0%</div>
+                                    <div class="tree-controls">
+                                        <button onclick="growTreeOnce()" class="btn-icon" title="Nutrients">🌿</button>
+                                        <button onclick="resetTree()" class="btn-icon" title="Reset">🔄</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right: Clicker & Shop -->
+                            <div class="game-hub">
+                                <div class="score-panel">
+                                    <div class="big-score">
+                                        <span id="timeScore">0</span>
+                                        <small>seconds</small>
+                                    </div>
+                                    <div class="rate-info">
+                                        <span>Rate: <b id="autoRate">0</b>/s</span>
+                                        <span>Mult: x<b id="multiplier">1</b></span>
+                                    </div>
+                                    <button id="clickBtn" class="btn-mega">EARN TIME</button>
+                                </div>
+
+                                <div class="upgrade-station">
+                                    <div onclick="buyUpgrade('auto1')" id="buy-auto1" class="upgrade-item">
+                                        <span class="up-icon">⚡</span>
+                                        <div class="up-info">
+                                            <b>Temporal Flux</b>
+                                            <span id="cost-auto1">15s</span>
+                                        </div>
+                                    </div>
+                                    <div onclick="buyUpgrade('auto10')" id="buy-auto10" class="upgrade-item">
+                                        <span class="up-icon">💠</span>
+                                        <div class="up-info">
+                                            <b>Quantum Gear</b>
+                                            <span id="cost-auto10">100s</span>
+                                        </div>
+                                    </div>
+                                    <div onclick="buyUpgrade('auto100')" id="buy-auto100" class="upgrade-item">
+                                        <span class="up-icon">🌀</span>
+                                        <div class="up-info">
+                                            <b>Causal Matrix</b>
+                                            <span id="cost-auto100">1000s</span>
+                                        </div>
+                                    </div>
+                                    <button id="rebirthBtn" onclick="handleRebirth()" class="btn-rebirth" disabled>
+                                        Rebirth (<span id="rebirthCount">0</span>)
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- New: Classic Lounge Area -->
+                        <div class="classic-lounge">
+                            <div class="art-card tictactoe-card">
+                                <div class="card-tag">Tic Tac Toe</div>
+                                <div class="game-header-mini">
+                                    <span id="levelBadge" class="level-badge">LV 1</span>
+                                    <button onclick="resetGame()" class="btn-mini">Reset</button>
+                                </div>
+                                <div id="board" class="tictactoe-board"></div>
+                                <div id="recordsList" class="records-mini-panel"></div>
+                            </div>
+
+                            <div class="art-card memory-card-module">
+                                <div class="card-tag">Memory Game</div>
+                                <button onclick="initMemoryGame()" class="btn-refresh">New Game</button>
+                                <div id="memoryBoard" class="memory-board"></div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom: Zen Galaxy Full Width -->
+                        <div class="zen-landscape">
+                            <div class="zen-header">
+                                <h3>Zen Galaxy Simulation</h3>
+                                <div class="zen-ctrls">
+                                    <button onclick="toggleZenMode()" id="zenToggleBtn" class="btn-mini">Start
+                                        Journey</button>
+                                    <button onclick="resetZenParticles()" class="btn-mini">Reset</button>
+                                </div>
+                            </div>
+                            <div id="zenGalaxyContainer" class="zen-box">
+                                <canvas id="zenCanvas"></canvas>
+                                <div id="zenCounter">Particles: 0</div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Global Ad Space -->
+                <footer class="stage-footer">
+                    <div class="ad-placement" id="mainAdSlot">
+                        <ins class="adsbygoogle" style="display:block; min-height:90px;"
+                            data-ad-client="ca-pub-7237384529818812" data-ad-slot="3580735781" data-ad-format="auto"
+                            data-full-width-responsive="true"></ins>
+                    </div>
+                    <p style="margin-top: 1rem;">&copy; 2026 Time Killer Hub. All Rights Reserved.</p>
+                </footer>
+            </main>
+    </div>
+    <script src="script.js"></script>
 </body>
 
 </html>
