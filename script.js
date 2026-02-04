@@ -349,18 +349,25 @@ async function loadGameRecords() {
         const data = await response.json();
         clearRecords.wins = data.wins || {};
         clearRecords.failures = data.failures || {};
-        updateRecordsUI();
     } catch (err) {
-        console.warn("Global records unavailable (Static Mode)");
-        // Hide records panel if API fails (Static Hosting)
-        const panel = document.querySelector('.records-panel');
-        if (panel) panel.style.display = 'none';
-        const gameLayout = document.querySelector('.game-layout');
-        if (gameLayout) gameLayout.style.display = 'block'; // Fallback to single column
+        console.warn("Global records unavailable, loading from LocalStorage");
+        const localData = localStorage.getItem('game_records');
+        if (localData) {
+            const parsed = JSON.parse(localData);
+            clearRecords.wins = parsed.wins || {};
+            clearRecords.failures = parsed.failures || {};
+        }
     }
+    updateRecordsUI();
 }
 
 async function incrementRecord(level, type = 'win') {
+    const key = type === 'win' ? 'wins' : 'failures';
+    clearRecords[key][level] = (clearRecords[key][level] || 0) + 1;
+
+    // UI Update immediately
+    updateRecordsUI();
+
     try {
         const response = await fetch('/api/records/increment', {
             method: 'POST',
@@ -376,7 +383,8 @@ async function incrementRecord(level, type = 'win') {
         clearRecords.failures = data.failures;
         updateRecordsUI();
     } catch (err) {
-        console.warn("Failed to update global records (Static Mode)");
+        console.warn("Failed to sync with server, saving to LocalStorage");
+        localStorage.setItem('game_records', JSON.stringify(clearRecords));
     }
 }
 
@@ -928,6 +936,14 @@ function updateClickerUI() {
     if (scoreEl) scoreEl.innerText = Math.floor(seconds).toLocaleString();
     if (autoEl) autoEl.innerText = autoSecondsPerSecond.toLocaleString();
 
+    // Save to LocalStorage
+    localStorage.setItem('clicker_data', JSON.stringify({
+        seconds: seconds,
+        autoRate: autoSecondsPerSecond,
+        owned: upgradeOwned,
+        costs: upgradeCosts
+    }));
+
     // Update shop buttons
     for (const id in upgradeCosts) {
         const btn = document.getElementById(`buy-${id}`);
@@ -971,6 +987,17 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchTrivia();
     fetchFact();
     fetchDailyHistory();
+
+    // Restore Clicker Data
+    const savedClicker = localStorage.getItem('clicker_data');
+    if (savedClicker) {
+        const data = JSON.parse(savedClicker);
+        seconds = data.seconds || 0;
+        autoSecondsPerSecond = data.autoRate || 0;
+        Object.assign(upgradeOwned, data.owned || {});
+        Object.assign(upgradeCosts, data.costs || {});
+        updateClickerUI();
+    }
 
     // Clicker Game Binding
     const clickBtn = document.getElementById('clickBtn');
