@@ -19,19 +19,32 @@ let upgradeOwned = {
 
 // --- Navigation & Core UI ---
 function switchTab(tabId) {
+    console.log('Switching to tab:', tabId);
+
     // 1. Module Management
     const sections = ['daily', 'discovery', 'games'];
     sections.forEach(s => {
-        document.getElementById(`${s}Section`).classList.remove('active');
+        const section = document.getElementById(`${s}Section`);
+        if (section) {
+            section.classList.remove('active');
+        }
     });
-    document.getElementById(`${tabId}Section`).classList.add('active');
 
-    // 2. Sidebar Button State
-    const btns = document.querySelectorAll('.nav-btn');
+    const targetSection = document.getElementById(`${tabId}Section`);
+    if (targetSection) {
+        targetSection.classList.add('active');
+        console.log('Activated section:', tabId);
+    } else {
+        console.error('Section not found:', `${tabId}Section`);
+    }
+
+    // 2. Tab Button State
+    const btns = document.querySelectorAll('.tab-btn');
     btns.forEach(btn => {
-        const onclick = btn.getAttribute('onclick');
-        if (onclick && onclick.includes(tabId)) btn.classList.add('active');
-        else btn.classList.remove('active');
+        btn.classList.remove('active');
+        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(`'${tabId}'`)) {
+            btn.classList.add('active');
+        }
     });
 
     // 3. Header & Text Updates
@@ -41,8 +54,15 @@ function switchTab(tabId) {
         'games': { t: "Spatial Play", s: "시간을 벌고, 나무를 키우고, 우주를 여행하세요" }
     };
 
-    document.getElementById('mainTitle').innerText = titleMap[tabId].t;
-    document.getElementById('mainSubtitle').innerText = titleMap[tabId].s;
+    const titleEl = document.getElementById('mainTitle');
+    const subtitleEl = document.getElementById('mainSubtitle');
+
+    if (titleEl && titleMap[tabId]) {
+        titleEl.innerText = titleMap[tabId].t;
+    }
+    if (subtitleEl && titleMap[tabId]) {
+        subtitleEl.innerText = titleMap[tabId].s;
+    }
 
     // Trigger visual updates
     if (tabId === 'games') {
