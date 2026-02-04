@@ -80,6 +80,43 @@ function switchTab(tabId) {
     }
 }
 
+// Game Sub-tab Navigation
+function switchGameTab(subTabId) {
+    console.log('Switching to game sub-tab:', subTabId);
+
+    // Hide all sub-sections
+    const subSections = ['clocks', 'arcade', 'idle'];
+    subSections.forEach(s => {
+        const section = document.getElementById(`${s}SubSection`);
+        if (section) {
+            section.classList.remove('active');
+        }
+    });
+
+    // Show target sub-section
+    const targetSection = document.getElementById(`${subTabId}SubSection`);
+    if (targetSection) {
+        targetSection.classList.add('active');
+    }
+
+    // Update sub-tab button states
+    const btns = document.querySelectorAll('.sub-tab-btn');
+    btns.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(`'${subTabId}'`)) {
+            btn.classList.add('active');
+        }
+    });
+
+    // Re-initialize games if needed
+    if (subTabId === 'idle') {
+        setTimeout(() => {
+            initZenGalaxy();
+            initChronosTree();
+        }, 100);
+    }
+}
+
 // Daily Toon Metadata Loader
 async function loadDailyToon() {
     try {

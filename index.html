@@ -199,97 +199,121 @@
 
                     <!-- Section: Clock & Games -->
                     <section id="gamesSection" class="stage-module">
-                        <div class="spatial-games">
-                            <!-- Left: Core Clock Control -->
-                            <div class="clock-control-panel">
-                                <div class="clock-display-area">
-                                    <div id="digitalView" class="digital-glow">00:00:00</div>
-                                    <canvas id="clockCanvas"></canvas>
-                                </div>
-                                <div class="selector-grid">
-                                    <button onclick="setClockType('analog')" class="selector-btn active">Analog</button>
-                                    <button onclick="setClockType('digital')" class="selector-btn">Digital</button>
-                                    <button onclick="setClockType('sundial')" class="selector-btn">Sundial</button>
-                                    <button onclick="setClockType('water')" class="selector-btn">Water</button>
-                                </div>
-                                <button onclick="resetAllGames()" class="btn-refresh"
-                                    style="margin-top: 1rem; background: rgba(244,63,94,0.2); border-color: #f43f5e;">🔄
-                                    전체 초기화</button>
-                            </div>
+                        <!-- Sub-tab Navigation -->
+                        <nav class="sub-tabs-nav">
+                            <button class="sub-tab-btn active" onclick="switchGameTab('clocks')">⏰ 시계</button>
+                            <button class="sub-tab-btn" onclick="switchGameTab('arcade')">🎮 아케이드</button>
+                            <button class="sub-tab-btn" onclick="switchGameTab('idle')">🌳 방치형</button>
+                        </nav>
 
-                            <!-- Center: Idle Tree -->
-                            <div class="center-growth">
-                                <div id="chronosTreeContainer" class="art-tree-box">
-                                    <canvas id="treeCanvas"></canvas>
-                                    <div id="treeStatus">Growth: 0%</div>
-                                    <div class="tree-controls">
-                                        <button onclick="growTreeOnce()" class="btn-icon" title="Nutrients">🌿</button>
-                                        <button onclick="resetTree()" class="btn-icon" title="Reset">🔄</button>
+                        <!-- Clocks Sub-section -->
+                        <div id="clocksSubSection" class="game-sub-section active">
+                            <div class="spatial-games">
+                                <!-- Left: Core Clock Control -->
+                                <div class="clock-control-panel">
+                                    <div class="clock-display-area">
+                                        <div id="digitalView" class="digital-glow">00:00:00</div>
+                                        <canvas id="clockCanvas"></canvas>
                                     </div>
-                                </div>
-                            </div>
-
-                            <!-- Right: Clicker & Shop -->
-                            <div class="game-hub">
-                                <div class="score-panel">
-                                    <div class="big-score">
-                                        <span id="timeScore">0</span>
-                                        <small>seconds</small>
+                                    <div class="selector-grid">
+                                        <button onclick="setClockType('analog')"
+                                            class="selector-btn active">Analog</button>
+                                        <button onclick="setClockType('digital')" class="selector-btn">Digital</button>
+                                        <button onclick="setClockType('sundial')" class="selector-btn">Sundial</button>
+                                        <button onclick="setClockType('water')" class="selector-btn">Water</button>
                                     </div>
-                                    <div class="rate-info">
-                                        <span>Rate: <b id="autoRate">0</b>/s</span>
-                                        <span>Mult: x<b id="multiplier">1</b></span>
-                                    </div>
-                                    <button id="clickBtn" class="btn-mega">EARN TIME</button>
+                                    <button onclick="resetAllGames()" class="btn-refresh"
+                                        style="margin-top: 1rem; background: rgba(244,63,94,0.2); border-color: #f43f5e;">🔄
+                                        전체 초기화</button>
                                 </div>
 
-                                <div class="upgrade-station">
-                                    <div onclick="buyUpgrade('auto1')" id="buy-auto1" class="upgrade-item">
-                                        <span class="up-icon">⚡</span>
-                                        <div class="up-info">
-                                            <b>Temporal Flux</b>
-                                            <span id="cost-auto1">15s</span>
+                                <!-- Center: Idle Tree -->
+                                <div class="center-growth">
+                                    <div id="chronosTreeContainer" class="art-tree-box">
+                                        <canvas id="treeCanvas"></canvas>
+                                        <div id="treeStatus">Growth: 0%</div>
+                                        <div class="tree-controls">
+                                            <button onclick="growTreeOnce()" class="btn-icon"
+                                                title="Nutrients">🌿</button>
+                                            <button onclick="resetTree()" class="btn-icon" title="Reset">🔄</button>
                                         </div>
                                     </div>
-                                    <div onclick="buyUpgrade('auto10')" id="buy-auto10" class="upgrade-item">
-                                        <span class="up-icon">💠</span>
-                                        <div class="up-info">
-                                            <b>Quantum Gear</b>
-                                            <span id="cost-auto10">100s</span>
+                                </div>
+
+                                <!-- Right: Clicker & Shop -->
+                                <div class="game-hub">
+                                    <div class="score-panel">
+                                        <div class="big-score">
+                                            <span id="timeScore">0</span>
+                                            <small>seconds</small>
                                         </div>
-                                    </div>
-                                    <div onclick="buyUpgrade('auto100')" id="buy-auto100" class="upgrade-item">
-                                        <span class="up-icon">🌀</span>
-                                        <div class="up-info">
-                                            <b>Causal Matrix</b>
-                                            <span id="cost-auto100">1000s</span>
+                                        <div class="rate-info">
+                                            <span>Rate: <b id="autoRate">0</b>/s</span>
+                                            <span>Mult: x<b id="multiplier">1</b></span>
                                         </div>
+                                        <button id="clickBtn" class="btn-mega">EARN TIME</button>
                                     </div>
-                                    <button id="rebirthBtn" onclick="handleRebirth()" class="btn-rebirth" disabled>
-                                        Rebirth (<span id="rebirthCount">0</span>)
-                                    </button>
+
+                                    <div class="upgrade-station">
+                                        <div onclick="buyUpgrade('auto1')" id="buy-auto1" class="upgrade-item">
+                                            <span class="up-icon">⚡</span>
+                                            <div class="up-info">
+                                                <b>Temporal Flux</b>
+                                                <span id="cost-auto1">15s</span>
+                                            </div>
+                                        </div>
+                                        <div onclick="buyUpgrade('auto10')" id="buy-auto10" class="upgrade-item">
+                                            <span class="up-icon">💠</span>
+                                            <div class="up-info">
+                                                <b>Quantum Gear</b>
+                                                <span id="cost-auto10">100s</span>
+                                            </div>
+                                        </div>
+                                        <div onclick="buyUpgrade('auto100')" id="buy-auto100" class="upgrade-item">
+                                            <span class="up-icon">🌀</span>
+                                            <div class="up-info">
+                                                <b>Causal Matrix</b>
+                                                <span id="cost-auto100">1000s</span>
+                                            </div>
+                                        </div>
+                                        <button id="rebirthBtn" onclick="handleRebirth()" class="btn-rebirth" disabled>
+                                            Rebirth (<span id="rebirthCount">0</span>)
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                </div>
+                <!-- End Clocks Sub-section -->
 
-                        <!-- New: Classic Lounge Area -->
-                        <div class="classic-lounge">
-                            <div class="art-card tictactoe-card">
-                                <div class="card-tag">Tic Tac Toe</div>
-                                <div class="game-header-mini">
-                                    <span id="levelBadge" class="level-badge">LV 1</span>
-                                    <button onclick="resetGame()" class="btn-mini">Reset</button>
-                                </div>
-                                <div id="board" class="tictactoe-board"></div>
-                                <div id="recordsList" class="records-mini-panel"></div>
-                            </div>
+                <!-- Arcade Sub-section -->
+                <div id="arcadeSubSection" class="game-sub-section">
 
-                            <div class="art-card memory-card-module">
-                                <div class="card-tag">Memory Game</div>
-                                <button onclick="initMemoryGame()" class="btn-refresh">New Game</button>
-                                <div id="memoryBoard" class="memory-board"></div>
+                    <!-- New: Classic Lounge Area -->
+                    <div class="classic-lounge">
+                        <div class="art-card tictactoe-card">
+                            <div class="card-tag">Tic Tac Toe</div>
+                            <div class="game-header-mini">
+                                <span id="levelBadge" class="level-badge">LV 1</span>
+                                <button onclick="resetGame()" class="btn-mini">Reset</button>
                             </div>
+                            <div id="board" class="tictactoe-board"></div>
+                            <div id="recordsList" class="records-mini-panel"></div>
                         </div>
+
+                        <div class="art-card memory-card-module">
+                            <div class="card-tag">Memory Game</div>
+                            <button onclick="initMemoryGame()" class="btn-refresh">New Game</button>
+                            <div id="memoryBoard" class="memory-board"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- End Arcade Sub-section -->
+
+                <!-- Idle Games Sub-section -->
+                <div id="idleSubSection" class="game-sub-section">
+                    <div class="spatial-games">
+                        <!-- Chronos Tree -->
 
                         <!-- Bottom: Zen Galaxy Full Width -->
                         <div class="zen-landscape">
@@ -306,19 +330,21 @@
                                 <div id="zenCounter">Particles: 0</div>
                             </div>
                         </div>
-                    </section>
-                </div>
-
-                <!-- Global Ad Space -->
-                <footer class="stage-footer">
-                    <div class="ad-placement" id="mainAdSlot">
-                        <ins class="adsbygoogle" style="display:block; min-height:90px;"
-                            data-ad-client="ca-pub-7237384529818812" data-ad-slot="3580735781" data-ad-format="auto"
-                            data-full-width-responsive="true"></ins>
                     </div>
-                    <p style="margin-top: 1rem;">&copy; 2026 Time Killer Hub. All Rights Reserved.</p>
-                </footer>
-            </main>
+                </div>
+                <!-- End Idle Sub-section -->
+                </section>
+    </div>
+
+    <!-- Global Ad Space -->
+    <footer class="stage-footer">
+        <div class="ad-placement" id="mainAdSlot">
+            <ins class="adsbygoogle" style="display:block; min-height:90px;" data-ad-client="ca-pub-7237384529818812"
+                data-ad-slot="3580735781" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        </div>
+        <p style="margin-top: 1rem;">&copy; 2026 Time Killer Hub. All Rights Reserved.</p>
+    </footer>
+    </main>
     </div>
     <script src="script.js"></script>
 </body>
