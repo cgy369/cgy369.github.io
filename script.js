@@ -59,6 +59,21 @@ function setClockType(type) {
 }
 
 function renderClock() {
+    // 1. Calculate Virtual Time first (Shared by both Analog and Digital)
+    const totalSec = Math.floor(seconds);
+    const s = totalSec % 60;
+    const m = Math.floor(totalSec / 60) % 60;
+    const h = Math.floor(totalSec / 3600) % 24;
+    const d = Math.floor(totalSec / 86400);
+
+    // 2. Always Update Digital View
+    const digitalView = document.getElementById('digitalView');
+    if (digitalView) {
+        const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        digitalView.innerText = d > 0 ? `Day ${d} ${timeStr}` : timeStr;
+    }
+
+    // 3. Canvas Rendering (Only if visible)
     const canvas = document.getElementById('clockCanvas');
     if (!canvas || canvas.offsetParent === null) return;
     const ctx = canvas.getContext('2d');
@@ -76,13 +91,6 @@ function renderClock() {
     const centerY = size / 2;
     const radius = size / 2 - 10;
 
-    // Use Virtual Time (seconds)
-    const totalSec = Math.floor(seconds);
-    const s = totalSec % 60;
-    const m = Math.floor(totalSec / 60) % 60;
-    const h = Math.floor(totalSec / 3600) % 24;
-    const d = Math.floor(totalSec / 86400);
-
     if (clockType === 'analog') {
         drawAnalogClock(ctx, centerX, centerY, radius, h, m, s);
     } else if (clockType === 'sundial') {
@@ -90,10 +98,6 @@ function renderClock() {
     } else if (clockType === 'water') {
         drawWaterClock(ctx, centerX, centerY, radius, s);
     }
-
-    // Update digital text (Include days if > 0)
-    const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-    document.getElementById('digitalView').innerText = d > 0 ? `Day ${d} ${timeStr}` : timeStr;
 }
 
 function drawAnalogClock(ctx, x, y, r, h, m, s) {
