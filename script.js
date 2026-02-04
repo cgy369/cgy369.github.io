@@ -17,26 +17,56 @@ let upgradeOwned = {
     auto100: 0
 };
 
-// --- Tab Navigation ---
+// --- Navigation & Core UI ---
 function switchTab(tabId) {
-    document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    // 1. Module Management
+    const sections = ['daily', 'discovery', 'games'];
+    sections.forEach(s => {
+        document.getElementById(`${s}Section`).classList.remove('active');
+    });
+    document.getElementById(`${tabId}Section`).classList.add('active');
 
-    const activeSec = document.getElementById(`${tabId}Section`);
-    if (activeSec) activeSec.classList.add('active');
+    // 2. Sidebar Button State
+    const btns = document.querySelectorAll('.nav-btn');
+    btns.forEach(btn => {
+        const onclick = btn.getAttribute('onclick');
+        if (onclick && onclick.includes(tabId)) btn.classList.add('active');
+        else btn.classList.remove('active');
+    });
 
-    const activeBtn = document.querySelector(`.tab-btn[onclick="switchTab('${tabId}')"]`);
-    if (activeBtn) activeBtn.classList.add('active');
-
-    // UI Feedback for main title
-    const titles = {
-        'daily': { main: 'Daily Pleasure', sub: '매일 새로운 상식과 퀴즈로 두뇌를 깨워보세요' },
-        'discovery': { main: 'Birth Secret', sub: '당신이 태어난 날의 비밀을 확인해보세요' },
-        'games': { main: 'Time & Play', sub: '시간을 벌고 기록을 갱신해보세요' }
+    // 3. Header & Text Updates
+    const titleMap = {
+        'daily': { t: "Daily Fun", s: "매일 새로운 상식과 퀴즈로 두뇌를 깨워보세요" },
+        'discovery': { t: "Birth Secret", s: "당신이 태어난 날의 비밀을 공간에 펼칩니다" },
+        'games': { t: "Spatial Play", s: "시간을 벌고, 나무를 키우고, 우주를 여행하세요" }
     };
-    if (titles[tabId]) {
-        document.getElementById('mainTitle').innerText = titles[tabId].main;
-        document.getElementById('mainSubtitle').innerText = titles[tabId].sub;
+
+    document.getElementById('mainTitle').innerText = titleMap[tabId].t;
+    document.getElementById('mainSubtitle').innerText = titleMap[tabId].s;
+
+    // Trigger visual updates
+    if (tabId === 'games') {
+        setTimeout(() => {
+            initZenGalaxy();
+            initChronosTree();
+        }, 100);
+    }
+}
+
+// Art Engine: Time-Sensitive Environment
+function updateEnvironment(totalSec) {
+    const h = (Math.floor(totalSec / 3600) % 24);
+    const root = document.documentElement;
+
+    // Day (6~18) vs Night (18~6)
+    if (h >= 6 && h < 18) {
+        root.style.setProperty('--env-hue', '200'); // blueish
+        root.style.setProperty('--env-brightness', '1');
+        root.style.setProperty('--env-glow-opacity', '0.1');
+    } else {
+        root.style.setProperty('--env-hue', '260'); // purpleish
+        root.style.setProperty('--env-brightness', '0.8');
+        root.style.setProperty('--env-glow-opacity', '0.3');
     }
 }
 
@@ -66,11 +96,16 @@ function renderClock() {
     const h = Math.floor(totalSec / 3600) % 24;
     const d = Math.floor(totalSec / 86400);
 
-    // 2. Always Update Digital View
+    // 2. Always Update Digital View & Mini Clock
     const digitalView = document.getElementById('digitalView');
+    const miniClock = document.getElementById('miniClock');
+    const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+
     if (digitalView) {
-        const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
         digitalView.innerText = d > 0 ? `Day ${d} ${timeStr}` : timeStr;
+    }
+    if (miniClock) {
+        miniClock.innerText = timeStr;
     }
 
     // 3. Canvas Rendering (Only if visible)
@@ -223,17 +258,19 @@ function drawWaterClock(ctx, x, y, r, s) {
 
 // --- Clicker Game Logic ---
 function updateClickerUI() {
-    document.getElementById('timeScore').innerText = Math.floor(seconds).toLocaleString();
-    document.getElementById('autoRate').innerText = (autoSecondsPerSecond * multiplier).toLocaleString();
-    document.getElementById('multiplier').innerText = multiplier.toLocaleString();
-    document.getElementById('rebirthCount').innerText = rebirthCount;
+    const floorSec = Math.floor(seconds);
+    const scoreStr = floorSec.toLocaleString();
 
-    const rebirthBtn = document.getElementById('rebirthBtn');
-    if (rebirthBtn) {
-        rebirthBtn.disabled = seconds < rebirthThreshold;
-        rebirthBtn.innerText = seconds < rebirthThreshold ? `환생하기 (보너스 +1x)` : "환생 가능! 클릭하세요";
-    }
+    // Header & Main Score
+    if (document.getElementById('timeScore')) document.getElementById('timeScore').innerText = scoreStr;
+    if (document.getElementById('headerScore')) document.getElementById('headerScore').innerText = scoreStr;
 
+    // Rates & Multipliers
+    if (document.getElementById('autoRate')) document.getElementById('autoRate').innerText = (autoSecondsPerSecond * multiplier).toLocaleString();
+    if (document.getElementById('multiplier')) document.getElementById('multiplier').innerText = multiplier.toLocaleString();
+    if (document.getElementById('rebirthCount')) document.getElementById('rebirthCount').innerText = rebirthCount;
+
+    // Upgrades
     for (const id in upgradeCosts) {
         const costEl = document.getElementById(`cost-${id}`);
         const itemEl = document.getElementById(`buy-${id}`);
@@ -241,6 +278,14 @@ function updateClickerUI() {
         if (itemEl) {
             itemEl.classList.toggle('disabled', seconds < upgradeCosts[id]);
         }
+    }
+
+    // Environment & Logic
+    updateEnvironment(seconds);
+
+    const rebirthBtn = document.getElementById('rebirthBtn');
+    if (rebirthBtn) {
+        rebirthBtn.disabled = seconds < rebirthThreshold;
     }
 
     // Save state

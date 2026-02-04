@@ -107,143 +107,205 @@
                                 <div id="flowerMeaning" class="element-meaning"
                                     style="font-size: 0.9rem; color: var(--text-dim);"></div>
                             </div>
+                            <!-- Main Stage -->
+                            <main class="main-stage">
+                                <header class="stage-header">
+                                    <div class="header-content">
+                                        <h1 id="mainTitle">Daily Fun</h1>
+                                        <p id="mainSubtitle" class="subtitle">매일 새로운 상식과 퀴즈로 두뇌를 깨워보세요</p>
+                                    </div>
+                                    <div class="user-stats">
+                                        <div class="stat-badge">
+                                            <span class="label">SCORE</span>
+                                            <span id="headerScore" class="value">0</span>
+                                        </div>
+                                    </div>
+                                </header>
+
+                                <div id="contentModules" class="content-modules">
+                                    <!-- Section: Daily Fun -->
+                                    <section id="dailySection" class="stage-module active">
+                                        <div class="art-grid">
+                                            <div class="art-card trivia-card">
+                                                <div class="card-tag">Trivia</div>
+                                                <div id="triviaContent" class="card-body">가져오는 중...</div>
+                                                <button onclick="fetchTrivia()" class="btn-mini">Refresh</button>
+                                            </div>
+                                            <div class="art-card fact-card">
+                                                <div class="card-tag">Useless Fact</div>
+                                                <div id="factContent" class="card-body">상식을 가져오는 중...</div>
+                                                <button onclick="fetchFact()" class="btn-mini">Next</button>
+                                            </div>
+                                            <div class="art-card fortune-card">
+                                                <div class="card-tag">Fortune</div>
+                                                <div id="fortuneContent" class="card-body">오늘의 운세는 어떨까요?</div>
+                                                <button onclick="revealFortune()" class="btn-refresh">확인하기</button>
+                                            </div>
+                                            <div class="art-card history-card">
+                                                <div class="card-tag">History</div>
+                                                <div id="dailyHistoryContent" class="card-body">역사를 가져오는 중...</div>
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    <!-- Section: Birth Discovery -->
+                                    <section id="discoverySection" class="stage-module">
+                                        <div class="discovery-station">
+                                            <div class="input-panel">
+                                                <h2>Birth Secret</h2>
+                                                <p>당신이 태어난 날의 비밀을 공간에 펼칩니다.</p>
+                                                <div class="input-group">
+                                                    <input type="date" id="birthDate" class="premium-input">
+                                                    <button onclick="discover()" class="btn-glow">Discover</button>
+                                                </div>
+                                            </div>
+
+                                            <div id="resultSection" class="result-landscape">
+                                                <div class="result-cluster">
+                                                    <div class="res-card main-res">
+                                                        <div id="zodiacName" class="res-title">-</div>
+                                                        <p id="zodiacDetails">-</p>
+                                                    </div>
+                                                    <div class="res-card sub-res">
+                                                        <div class="res-item">
+                                                            <span class="label">Birthstone</span>
+                                                            <b id="birthStone">-</b>
+                                                        </div>
+                                                        <div class="res-item">
+                                                            <span class="label">Flower</span>
+                                                            <b id="birthFlower">-</b>
+                                                        </div>
+                                                        <p id="flowerMeaning" class="small-text"></p>
+                                                    </div>
+                                                </div>
+
+                                                <div id="statsGrid" class="stats-landscape"></div>
+
+                                                <div id="eventList" class="wiki-landscape"></div>
+
+                                                <div class="prompt-panel">
+                                                    <h3>AI Artist Prompt</h3>
+                                                    <div id="aiPromptText" class="prompt-box">-</div>
+                                                    <button onclick="copyPrompt()" class="btn-mini">Copy Prompt</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </section>
+
+                                    <!-- Section: Clock & Games -->
+                                    <section id="gamesSection" class="stage-module">
+                                        <div class="spatial-games">
+                                            <!-- Left: Core Clock Control -->
+                                            <div class="clock-control-panel">
+                                                <div class="clock-display-area">
+                                                    <div id="digitalView" class="digital-glow">00:00:00</div>
+                                                    <canvas id="clockCanvas"></canvas>
+                                                </div>
+                                                <div class="selector-grid">
+                                                    <button onclick="setClockType('analog')"
+                                                        class="selector-btn active">Analog</button>
+                                                    <button onclick="setClockType('digital')"
+                                                        class="selector-btn">Digital</button>
+                                                    <button onclick="setClockType('sundial')"
+                                                        class="selector-btn">Sundial</button>
+                                                    <button onclick="setClockType('water')"
+                                                        class="selector-btn">Water</button>
+                                                </div>
+                                            </div>
+
+                                            <!-- Center: Idle Tree -->
+                                            <div class="center-growth">
+                                                <div id="chronosTreeContainer" class="art-tree-box">
+                                                    <canvas id="treeCanvas"></canvas>
+                                                    <div id="treeStatus">Growth: 0%</div>
+                                                    <div class="tree-controls">
+                                                        <button onclick="growTreeOnce()" class="btn-icon"
+                                                            title="Nutrients">🌿</button>
+                                                        <button onclick="resetTree()" class="btn-icon"
+                                                            title="Reset">🔄</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Right: Clicker & Shop -->
+                                            <div class="game-hub">
+                                                <div class="score-panel">
+                                                    <div class="big-score">
+                                                        <span id="timeScore">0</span>
+                                                        <small>seconds</small>
+                                                    </div>
+                                                    <div class="rate-info">
+                                                        <span>Rate: <b id="autoRate">0</b>/s</span>
+                                                        <span>Mult: x<b id="multiplier">1</b></span>
+                                                    </div>
+                                                    <button id="clickBtn" class="btn-mega">EARN TIME</button>
+                                                </div>
+
+                                                <div class="upgrade-station">
+                                                    <div onclick="buyUpgrade('auto1')" id="buy-auto1"
+                                                        class="upgrade-item">
+                                                        <span class="up-icon">⚡</span>
+                                                        <div class="up-info">
+                                                            <b>Temporal Flux</b>
+                                                            <span id="cost-auto1">15s</span>
+                                                        </div>
+                                                    </div>
+                                                    <div onclick="buyUpgrade('auto10')" id="buy-auto10"
+                                                        class="upgrade-item">
+                                                        <span class="up-icon">💠</span>
+                                                        <div class="up-info">
+                                                            <b>Quantum Gear</b>
+                                                            <span id="cost-auto10">100s</span>
+                                                        </div>
+                                                    </div>
+                                                    <div onclick="buyUpgrade('auto100')" id="buy-auto100"
+                                                        class="upgrade-item">
+                                                        <span class="up-icon">🌀</span>
+                                                        <div class="up-info">
+                                                            <b>Causal Matrix</b>
+                                                            <span id="cost-auto100">1000s</span>
+                                                        </div>
+                                                    </div>
+                                                    <button id="rebirthBtn" onclick="handleRebirth()"
+                                                        class="btn-rebirth" disabled>
+                                                        Rebirth (<span id="rebirthCount">0</span>)
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Bottom: Zen Galaxy Full Width -->
+                                        <div class="zen-landscape">
+                                            <div class="zen-header">
+                                                <h3>Zen Galaxy Simulation</h3>
+                                                <div class="zen-ctrls">
+                                                    <button onclick="toggleZenMode()" id="zenToggleBtn"
+                                                        class="btn-mini">Start Journey</button>
+                                                    <button onclick="resetZenParticles()"
+                                                        class="btn-mini">Reset</button>
+                                                </div>
+                                            </div>
+                                            <div id="zenGalaxyContainer" class="zen-box">
+                                                <canvas id="zenCanvas"></canvas>
+                                                <div id="zenCounter">Particles: 0</div>
+                                            </div>
+                                        </div>
+                                    </section>
+                                </div>
+
+                                <!-- Global Ad Space -->
+                                <footer class="stage-footer">
+                                    <div class="ad-placement">
+                                        <ins class="adsbygoogle" style="display:block"
+                                            data-ad-client="ca-pub-7237384529818812" data-ad-slot="3580735781"
+                                            data-ad-format="auto" data-full-width-responsive="true"></ins>
+                                        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+                                    </div>
+                                    <p style="margin-top: 1rem;">&copy; 2026 Time Killer Hub. All Rights Reserved.</p>
+                                </footer>
+                            </main>
                         </div>
-
-                        <div class="daily-card" style="margin: 2rem 0;">
-                            <h3 style="margin-bottom: 1rem;">함께 태어난 친구들</h3>
-                            <div id="statsGrid" class="stats-grid"
-                                style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
-                                <!-- Stats -->
-                            </div>
-                        </div>
-
-                        <div class="daily-card" id="eventList">
-                            <!-- Events -->
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- [시계 & 게임] 섹션 -->
-            <section id="gamesSection" class="content-section">
-                <div class="clock-selector">
-                    <button class="selector-btn active" onclick="setClockType('analog')">아날로그</button>
-                    <button class="selector-btn" onclick="setClockType('digital')">디지털</button>
-                    <button class="selector-btn" onclick="setClockType('sundial')">해시계</button>
-                    <button class="selector-btn" onclick="setClockType('water')">물시계</button>
-                </div>
-
-                <div class="clicker-container">
-                    <div class="clicker-main-panel">
-                        <div class="clock-display-wrapper" id="clockWrapper">
-                            <canvas id="clockCanvas" class="clock-canvas"></canvas>
-                            <div id="digitalView" class="digital-clock-view" style="display:none;">00:00:00</div>
-                        </div>
-
-                        <div class="score-display">
-                            <span id="timeScore" class="score-text">0</span>
-                            <small style="color: var(--text-dim);">Earned Seconds</small>
-                        </div>
-
-                        <button id="clickBtn" class="click-btn">TIME FLOW</button>
-                        <p style="color: var(--text-dim);">자동 획득: <span id="autoRate">0</span>/sec (배율: x<span
-                                id="multiplier">1</span>)</p>
-
-                        <div class="rebirth-panel">
-                            <h3>환생 (Ascension)</h3>
-                            <p style="font-size: 0.9rem; color: var(--text-dim);">1,000,000초 달성 시 환생 가능. <br> 환생 시 모든
-                                점수와 업그레이드가 초기화되지만 영구 배율 보너스를 얻습니다.</p>
-                            <button id="rebirthBtn" class="btn-rebirth" onclick="handleRebirth()" disabled>환생하기 (보너스
-                                +1x)</button>
-                            <p style="margin-top: 0.5rem; font-size: 0.8rem;">현재 환생 횟수: <span id="rebirthCount">0</span>
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="shop-panel">
-                        <h3>시간 가속 (Shop)</h3>
-                        <div class="shop-item" id="buy-auto1" onclick="buyUpgrade('auto1')">
-                            <div class="item-info">
-                                <span class="item-name">손목 시계</span>
-                                <span class="item-desc">+1/sec 자동 획득</span>
-                            </div>
-                            <span class="btn-buy" id="cost-auto1">15s</span>
-                        </div>
-                        <div class="shop-item" id="buy-auto10" onclick="buyUpgrade('auto10')">
-                            <div class="item-info">
-                                <span class="item-name">스마트 워치</span>
-                                <span class="item-desc">+10/sec 자동 획득</span>
-                            </div>
-                            <span class="btn-buy" id="cost-auto10">100s</span>
-                        </div>
-                        <div class="shop-item" id="buy-auto100" onclick="buyUpgrade('auto100')">
-                            <div class="item-info">
-                                <span class="item-name">서버 시계</span>
-                                <span class="item-desc">+100/sec 자동 획득</span>
-                            </div>
-                            <span class="btn-buy" id="cost-auto100">1,000s</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="tictactoe-container" style="margin-top: 2rem;">
-                    <div class="game-main">
-                        <div class="game-header">
-                            <span class="level-badge" id="levelBadge">LV 1</span>
-                            <h3>업그레이드 틱택토</h3>
-                        </div>
-                        <div class="tictactoe-board" id="board"></div>
-                        <button onclick="resetGame()" class="btn-refresh">재시작</button>
-                    </div>
-                    <div class="records-panel"
-                        style="background: rgba(255,255,255,0.02); border-radius: 20px; padding: 1.5rem;">
-                        <h4>GLOBAL RECORDS</h4>
-                        <div id="recordsList"></div>
-                    </div>
-                </div>
-
-                <div class="daily-card" style="margin-top: 2rem;">
-                    <h3>Zen Galaxy (Idle Flow)</h3>
-                    <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">시간의 조각들이 우주를 유영하며 신비로운
-                        패턴을 만듭니다. 멍하니 바라보며 힐링하세요.</p>
-                    <div id="zenGalaxyContainer" class="zen-galaxy-container">
-                        <canvas id="zenCanvas"></canvas>
-                        <div id="zenCounter">Particles: 0</div>
-                    </div>
-                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center;">
-                        <button onclick="toggleZenMode()" class="btn-refresh" id="zenToggleBtn">우주 여행 시작</button>
-                        <button onclick="resetZenParticles()" class="btn-refresh">입자 초기화</button>
-                    </div>
-                </div>
-
-                <div class="daily-card" style="margin-top: 2rem;">
-                    <h3>Chronos Tree (Idle Growth)</h3>
-                    <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">축적된 시간(`seconds`)이 거대한
-                        나무로 피어납니다. 성장을 지켜보며 여유를 느껴보세요.</p>
-                    <div id="chronosTreeContainer" class="chronos-tree-container">
-                        <canvas id="treeCanvas"></canvas>
-                        <div id="treeStatus">Growth: 0%</div>
-                    </div>
-                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center;">
-                        <button onclick="growTreeOnce()" class="btn-refresh">시간의 영양제 주기</button>
-                        <button onclick="resetTree()" class="btn-refresh">나무 초기화</button>
-                    </div>
-                </div>
-
-                <div class="daily-card" style="margin-top: 2rem;">
-            </section>
-        </main>
-
-        <footer
-            style="margin-top: 4rem; padding: 2rem; text-align: center; border-top: 1px solid var(--glass-border); color: var(--text-dim);">
-            <div class="ad-container">
-                <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7237384529818812"
-                    data-ad-slot="3580735781" data-ad-format="auto" data-full-width-responsive="true"></ins>
-            </div>
-            <p style="margin-top: 1rem;">&copy; 2026 Time Killer Hub. All Rights Reserved.</p>
-        </footer>
-    </div>
-    <script src="script.js"></script>
+                        <script src="script.js"></script>
 </body>
 
 </html>
