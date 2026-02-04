@@ -49,6 +49,7 @@ function switchTab(tabId) {
         setTimeout(() => {
             initZenGalaxy();
             initChronosTree();
+            initMemoryGame(); // Ensure memory game is ready
         }, 100);
     }
 }
@@ -485,6 +486,8 @@ document.addEventListener('DOMContentLoaded', () => {
     resetGame(true);
     loadDailyToon(); // New: Load today's comic metadata
     initZenGalaxy();
+    initMemoryGame();
+    updateTictactoeUI();
 });
 
 // --- API Helpers (Reuse or Refine) ---
@@ -612,7 +615,8 @@ function checkGameOver() {
 }
 
 function updateTictactoeUI() {
-    document.getElementById('levelBadge').innerText = `LV ${level}`;
+    const badge = document.getElementById('levelBadge');
+    if (badge) badge.innerText = `LV ${level}`;
 }
 
 // --- Memory Game ---
@@ -623,6 +627,7 @@ const emojis = ["🍎", "🍐", "🍋", "🍌", "🍉", "🍇", "🍓", "🫐"];
 
 function initMemoryGame() {
     const boardEl = document.getElementById('memoryBoard');
+    if (!boardEl) return;
     boardEl.innerHTML = "";
     memoryCards = [...emojis, ...emojis].sort(() => Math.random() - 0.5);
     matched = 0;

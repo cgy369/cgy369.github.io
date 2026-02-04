@@ -146,10 +146,10 @@ Focus on visual descriptions. Minimal text.`, issue)
 func generateAndSaveImageFree(desc string, path string) {
 	fmt.Printf("   -> Fetching panel: %s\n", desc)
 
-	// Pollinations.ai URL format: https://pollinations.ai/p/[PROMPT]?[PARAMS]
+	// Use image.pollinations.ai for direct image link
 	seed := time.Now().UnixNano()
-	encodedPrompt := url.PathEscape("digital art style, cinematic lighting, masterpiece: " + desc)
-	apiURL := fmt.Sprintf("https://pollinations.ai/p/%s?width=512&height=512&seed=%d&model=flux", encodedPrompt, seed)
+	encodedPrompt := url.PathEscape("comic book style, vibrant colors, clean lines: " + desc)
+	apiURL := fmt.Sprintf("https://image.pollinations.ai/prompt/%s?width=1024&height=1024&seed=%d&nologo=true", encodedPrompt, seed)
 
 	err := downloadFile(apiURL, path)
 	if err != nil {
@@ -171,6 +171,12 @@ func downloadFile(url, filepath string) error {
 
 	if resp.StatusCode != 200 {
 		return fmt.Errorf("bad status: %s", resp.Status)
+	}
+
+	// Verify Content-Type is actually an image
+	contentType := resp.Header.Get("Content-Type")
+	if !strings.HasPrefix(contentType, "image/") {
+		return fmt.Errorf("invalid content type: %s (expected image/*)", contentType)
 	}
 
 	out, err := os.Create(filepath)
