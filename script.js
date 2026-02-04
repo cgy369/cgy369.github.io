@@ -71,4 +71,15 @@ function gameLoop() {
 document.addEventListener('DOMContentLoaded', () => {
     console.log("🌌 Cosmic Void Engine Initialized");
     requestAnimationFrame(gameLoop);
+
+    // Restore Google Ads Initialization
+    setTimeout(() => {
+        if (typeof adsbygoogle !== 'undefined') {
+            try {
+                (adsbygoogle = window.adsbygoogle || []).push({});
+            } catch (e) {
+                console.warn("AdSense init failed:", e);
+            }
+        }
+    }, 1000);
 });
