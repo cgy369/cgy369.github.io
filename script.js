@@ -829,7 +829,17 @@ async function discover() {
 
 function copyPrompt() {
     const text = document.getElementById('aiPromptText').innerText;
-    navigator.clipboard.writeText(text).then(() => alert("프롬프트가 복사되었습니다!"));
+    navigator.clipboard.writeText(text);
+    alert('프롬프트가 복사되었습니다!');
+}
+
+// Reset all game data
+function resetAllGames() {
+    if (confirm('⚠️ 모든 게임 데이터(점수, 나무 성장, 은하 등)가 초기화됩니다. 계속하시겠습니까?')) {
+        localStorage.clear();
+        alert('✅ 모든 데이터가 초기화되었습니다. 페이지를 새로고침합니다.');
+        location.reload();
+    }
 }
 
 // --- Zen Galaxy Simulation ---
