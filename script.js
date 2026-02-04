@@ -493,15 +493,34 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- API Helpers (Reuse or Refine) ---
 async function fetchTrivia() {
     const content = document.getElementById('triviaContent');
+    if (!content) return;
+
     content.innerText = "가져오는 중...";
     try {
         const res = await fetch('https://opentdb.com/api.php?amount=1&type=multiple');
+
+        if (res.status === 429) {
+            content.innerText = "⏳ API 요청 한도 초과. 잠시 후 다시 시도해주세요.";
+            return;
+        }
+
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+        }
+
         const data = await res.json();
+        if (!data.results || data.results.length === 0) {
+            throw new Error("No results");
+        }
+
         const item = data.results[0];
         const q = decodeHtml(item.question);
         const a = decodeHtml(item.correct_answer);
         content.innerHTML = `<p>${q}</p><div class='answer' style='opacity:0; transition:0.3s' onmouseover='this.style.opacity=1'>정답: ${a}</div>`;
-    } catch { content.innerText = "퀴즈를 가져오지 못했습니다."; }
+    } catch (err) {
+        console.warn("Trivia fetch failed:", err);
+        content.innerText = "💡 오늘의 퀴즈를 불러올 수 없습니다.";
+    }
 }
 
 async function fetchFact() {
