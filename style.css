@@ -163,6 +163,10 @@ canvas#cosmosCanvas {
 
 /* Panel Slider */
 .panel-slider {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%) translateY(100%);
     width: 100%;
     max-width: 600px;
     height: 300px;
@@ -171,14 +175,15 @@ canvas#cosmosCanvas {
     border-top-right-radius: 20px;
     border-top: 2px solid var(--neon-purple);
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    transform: translateY(100%);
-    /* Hidden by default */
+    /* Hidden by default handled by transform */
     padding: 20px;
     overflow-y: auto;
+    z-index: 50;
+    /* Ensure on top of other bottom elements */
 }
 
 .panel-slider:not(.hidden) {
-    transform: translateY(0);
+    transform: translateX(-50%) translateY(0);
 }
 
 .hidden {
