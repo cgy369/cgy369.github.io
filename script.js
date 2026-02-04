@@ -53,6 +53,23 @@ function switchTab(tabId) {
     }
 }
 
+// Daily Toon Metadata Loader
+async function loadDailyToon() {
+    try {
+        const resp = await fetch('assets/comics/today/metadata.json');
+        if (!resp.ok) return;
+        const data = await resp.json();
+
+        const titleEl = document.getElementById('comicTitle');
+        const dateEl = document.getElementById('comicDate');
+
+        if (titleEl && data.title) titleEl.innerText = data.title;
+        if (dateEl && data.date) dateEl.innerText = `Update: ${data.date} | Issue: ${data.issue}`;
+    } catch (e) {
+        console.warn("Daily Toon metadata not found. Using placeholders.");
+    }
+}
+
 // Art Engine: Time-Sensitive Environment
 function updateEnvironment(totalSec) {
     const h = (Math.floor(totalSec / 3600) % 24);
@@ -466,6 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchDailyHistory();
     loadGameRecords();
     resetGame(true);
+    loadDailyToon(); // New: Load today's comic metadata
     initZenGalaxy();
 });
 

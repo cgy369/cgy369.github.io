@@ -233,6 +233,50 @@ body {
     gap: 2rem;
 }
 
+.comic-card {
+    grid-column: span 2;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(56, 189, 248, 0.05));
+}
+
+.comic-header {
+    margin-bottom: 1.5rem;
+    border-left: 3px solid var(--accent-color);
+    padding-left: 1rem;
+}
+
+.comic-strip {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.comic-panel {
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 1/1;
+    border: 1px solid var(--glass-border);
+    transition: var(--transition-smooth);
+}
+
+.comic-panel img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.9;
+    transition: var(--transition-smooth);
+}
+
+.comic-panel:hover {
+    border-color: var(--accent-color);
+    transform: scale(1.02);
+    z-index: 10;
+}
+
+.comic-panel:hover img {
+    opacity: 1;
+}
+
 .art-card {
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
