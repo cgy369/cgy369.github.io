@@ -203,10 +203,20 @@
                 </div>
 
                 <div class="daily-card" style="margin-top: 2rem;">
-                    <h3>메모리 카드 게임</h3>
-                    <div id="memoryBoard" class="memory-board"></div>
-                    <button onclick="initMemoryGame()" class="btn-refresh">게임 시작</button>
+                    <h3>Zen Galaxy (Idle Flow)</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">시간의 조각들이 우주를 유영하며 신비로운
+                        패턴을 만듭니다. 멍하니 바라보며 힐링하세요.</p>
+                    <div id="zenGalaxyContainer" class="zen-galaxy-container">
+                        <canvas id="zenCanvas"></canvas>
+                        <div id="zenCounter">Particles: 0</div>
+                    </div>
+                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center;">
+                        <button onclick="toggleZenMode()" class="btn-refresh" id="zenToggleBtn">우주 여행 시작</button>
+                        <button onclick="resetZenParticles()" class="btn-refresh">입자 초기화</button>
+                    </div>
                 </div>
+
+                <div class="daily-card" style="margin-top: 2rem;">
             </section>
         </main>
 

@@ -323,6 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchDailyHistory();
     loadGameRecords();
     resetGame(true);
+    initZenGalaxy();
 });
 
 // --- API Helpers (Reuse or Refine) ---
@@ -612,3 +613,125 @@ function copyPrompt() {
     const text = document.getElementById('aiPromptText').innerText;
     navigator.clipboard.writeText(text).then(() => alert("프롬프트가 복사되었습니다!"));
 }
+
+// --- Zen Galaxy Simulation ---
+let zenActive = false;
+let zenParticles = [];
+let zenAnimationFrame;
+const ZEN_MAX_PARTICLES = 1500;
+
+class ZenParticle {
+    constructor(w, h) {
+        this.init(w, h);
+    }
+    init(w, h) {
+        const ang = Math.random() * Math.PI * 2;
+        const dist = Math.random() * Math.min(w, h) * 0.5;
+        this.x = w / 2 + Math.cos(ang) * dist;
+        this.y = h / 2 + Math.sin(ang) * dist;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = (Math.random() - 0.5) * 2;
+        this.size = Math.random() * 1.5 + 0.5;
+        this.hue = 200 + Math.random() * 60;
+        this.alpha = Math.random() * 0.5 + 0.5;
+    }
+    update(w, h, m) {
+        const dx = w / 2 - this.x;
+        const dy = h / 2 - this.y;
+        const distSq = dx * dx + dy * dy;
+        const dist = Math.sqrt(distSq);
+
+        // Gravity towards center (stronger if further, creates orbits)
+        const force = 0.0005 * m;
+        this.vx += (dx / dist) * force * (dist * 0.01);
+        this.vy += (dy / dist) * force * (dist * 0.01);
+
+        // Swirl effect
+        const swirl = 0.001 * m;
+        this.vx += dy * swirl;
+        this.vy -= dx * swirl;
+
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Drag
+        this.vx *= 0.98;
+        this.vy *= 0.98;
+    }
+    draw(ctx) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${this.hue}, 80%, 75%, ${this.alpha})`;
+        ctx.fill();
+    }
+}
+
+function initZenGalaxy() {
+    const canvas = document.getElementById('zenCanvas');
+    const container = document.getElementById('zenGalaxyContainer');
+    if (!canvas || !container) return;
+
+    const resize = () => {
+        canvas.width = container.clientWidth * window.devicePixelRatio;
+        canvas.height = container.clientHeight * window.devicePixelRatio;
+        canvas.style.width = `${container.clientWidth}px`;
+        canvas.style.height = `${container.clientHeight}px`;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+}
+
+function toggleZenMode() {
+    zenActive = !zenActive;
+    const btn = document.getElementById('zenToggleBtn');
+    if (zenActive) {
+        btn.innerText = "우주 여행 중지";
+        btn.style.background = "#f43f5e";
+        ZenLoop();
+    } else {
+        btn.innerText = "우주 여행 시작";
+        btn.style.background = "";
+        cancelAnimationFrame(zenAnimationFrame);
+    }
+}
+
+function resetZenParticles() {
+    zenParticles = [];
+    document.getElementById('zenCounter').innerText = `Particles: 0`;
+}
+
+function ZenLoop() {
+    if (!zenActive) return;
+    const canvas = document.getElementById('zenCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+    const dpr = window.devicePixelRatio;
+
+    ctx.fillStyle = 'rgba(5, 5, 5, 0.1)'; // Trail effect
+    ctx.fillRect(0, 0, w, h);
+
+    // Spawn based on multiplier or base rate
+    if (zenParticles.length < ZEN_MAX_PARTICLES && Math.random() < 0.3) {
+        const count = Math.min(5, Math.ceil(multiplier));
+        for (let i = 0; i < count; i++) {
+            zenParticles.push(new ZenParticle(w, h));
+        }
+    }
+
+    ctx.save();
+    // Blur effect for glow
+    ctx.shadowBlur = 4;
+    ctx.shadowColor = '#38bdf8';
+
+    zenParticles.forEach((p, i) => {
+        p.update(w, h, multiplier * 1.5);
+        p.draw(ctx);
+    });
+    ctx.restore();
+
+    document.getElementById('zenCounter').innerText = `Particles: ${zenParticles.length}`;
+    zenAnimationFrame = requestAnimationFrame(ZenLoop);
+}
+
