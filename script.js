@@ -62,7 +62,6 @@ function renderClock() {
     const canvas = document.getElementById('clockCanvas');
     if (!canvas || canvas.offsetParent === null) return;
     const ctx = canvas.getContext('2d');
-    const now = new Date();
 
     // Set canvas resolution
     const size = 280;
@@ -77,22 +76,27 @@ function renderClock() {
     const centerY = size / 2;
     const radius = size / 2 - 10;
 
+    // Use Virtual Time (seconds)
+    const totalSec = Math.floor(seconds);
+    const s = totalSec % 60;
+    const m = Math.floor(totalSec / 60) % 60;
+    const h = Math.floor(totalSec / 3600) % 24;
+    const d = Math.floor(totalSec / 86400);
+
     if (clockType === 'analog') {
-        drawAnalogClock(ctx, centerX, centerY, radius, now);
+        drawAnalogClock(ctx, centerX, centerY, radius, h, m, s);
     } else if (clockType === 'sundial') {
-        drawSundial(ctx, centerX, centerY, radius, now);
+        drawSundial(ctx, centerX, centerY, radius, totalSec % 86400);
     } else if (clockType === 'water') {
-        drawWaterClock(ctx, centerX, centerY, radius, now);
+        drawWaterClock(ctx, centerX, centerY, radius, s);
     }
 
-    // Update digital text anyway
-    const h = String(now.getHours()).padStart(2, '0');
-    const m = String(now.getMinutes()).padStart(2, '0');
-    const s = String(now.getSeconds()).padStart(2, '0');
-    document.getElementById('digitalView').innerText = `${h}:${m}:${s}`;
+    // Update digital text (Include days if > 0)
+    const timeStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    document.getElementById('digitalView').innerText = d > 0 ? `Day ${d} ${timeStr}` : timeStr;
 }
 
-function drawAnalogClock(ctx, x, y, r, now) {
+function drawAnalogClock(ctx, x, y, r, h, m, s) {
     // Face
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
@@ -101,22 +105,19 @@ function drawAnalogClock(ctx, x, y, r, now) {
     ctx.stroke();
 
     // Marks
+    ctx.strokeStyle = '#94a3b8';
     for (let i = 0; i < 12; i++) {
         const ang = (i * Math.PI) / 6;
         ctx.beginPath();
-        ctx.moveTo(x + Math.cos(ang) * (r - 5), y + Math.sin(ang) * (r - 5));
-        ctx.lineTo(x + Math.cos(ang) * (r - 15), y + Math.sin(ang) * (r - 15));
+        ctx.moveTo(x + Math.cos(ang) * (r - 2), y + Math.sin(ang) * (r - 2));
+        ctx.lineTo(x + Math.cos(ang) * (r - 10), y + Math.sin(ang) * (r - 10));
         ctx.stroke();
     }
 
     // Hands
-    const hr = now.getHours() % 12;
-    const min = now.getMinutes();
-    const sec = now.getSeconds();
-
-    drawHand(ctx, x, y, (hr * Math.PI) / 6 + (min * Math.PI) / (6 * 60), r * 0.5, 4, '#fff');
-    drawHand(ctx, x, y, (min * Math.PI) / 30, r * 0.7, 3, '#94a3b8');
-    drawHand(ctx, x, y, (sec * Math.PI) / 30, r * 0.85, 2, '#38bdf8');
+    drawHand(ctx, x, y, (h * Math.PI) / 6 + (m * Math.PI) / (6 * 60), r * 0.5, 4, '#fff');
+    drawHand(ctx, x, y, (m * Math.PI) / 30, r * 0.7, 3, '#94a3b8');
+    drawHand(ctx, x, y, (s * Math.PI) / 30, r * 0.85, 2, '#38bdf8');
 }
 
 function drawHand(ctx, x, y, ang, length, width, color) {
@@ -129,29 +130,78 @@ function drawHand(ctx, x, y, ang, length, width, color) {
     ctx.stroke();
 }
 
-function drawSundial(ctx, x, y, r, now) {
-    // Base circle
+function drawSundial(ctx, x, y, r, daySec) {
+    const hour = daySec / 3600; // 0 ~ 24
+
+    // Draw Sky (Day/Night transition)
+    const gradient = ctx.createLinearGradient(0, 0, 0, y * 2);
+    if (hour >= 6 && hour < 18) {
+        // Day
+        gradient.addColorStop(0, '#0ea5e9'); // sky blue
+        gradient.addColorStop(1, '#38bdf8');
+    } else {
+        // Night
+        gradient.addColorStop(0, '#020617'); // dark navy
+        gradient.addColorStop(1, '#1e1b4b');
+    }
+
+    ctx.save();
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255, 180, 0, 0.1)';
-    ctx.fill();
-    ctx.strokeStyle = '#f59e0b';
+    ctx.clip();
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, x * 2, y * 2);
+
+    // Draw Horizon
+    ctx.beginPath();
+    ctx.moveTo(x - r, y + 20);
+    ctx.lineTo(x + r, y + 20);
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Shadow line
-    const hr = now.getHours() + now.getMinutes() / 60;
-    const shadowAng = (hr - 6) * (Math.PI / 12); // Assume 6AM is left, 6PM is right
+    // Draw Sun/Moon in an arc
+    // Start at 6:00 (left horizon), peak at 12:00 (top), end at 18:00 (right horizon)
+    if (hour >= 6 && hour < 18) {
+        const sunPos = (hour - 6) / 12; // 0 to 1
+        const angle = Math.PI + sunPos * Math.PI;
+        const sx = x + Math.cos(angle) * (r * 0.7);
+        const sy = y + Math.sin(angle) * (r * 0.7) + 20;
 
+        // Glow
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = '#fbbf24';
+        ctx.beginPath();
+        ctx.arc(sx, sy, 15, 0, Math.PI * 2);
+        ctx.fillStyle = '#f59e0b';
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    } else {
+        // Moon
+        const moonHour = hour >= 18 ? hour - 18 : hour + 6;
+        const moonPos = moonHour / 12;
+        const angle = Math.PI + moonPos * Math.PI;
+        const mx = x + Math.cos(angle) * (r * 0.7);
+        const my = y + Math.sin(angle) * (r * 0.7) + 20;
+
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#fff';
+        ctx.beginPath();
+        ctx.arc(mx, my, 10, 0, Math.PI * 2);
+        ctx.fillStyle = '#f8fafc';
+        ctx.fill();
+        ctx.shadowBlur = 0;
+    }
+
+    ctx.restore();
     ctx.beginPath();
-    ctx.lineWidth = 5;
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + Math.cos(shadowAng) * r, y + Math.sin(shadowAng) * r);
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
     ctx.stroke();
 }
 
-function drawWaterClock(ctx, x, y, r, now) {
-    const fillPercent = (now.getSeconds() / 60);
+function drawWaterClock(ctx, x, y, r, s) {
+    const fillPercent = s / 60;
     const waterY = y + r - (fillPercent * 2 * r);
 
     ctx.save();
@@ -256,7 +306,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     setInterval(() => {
-        seconds += (autoSecondsPerSecond * multiplier) / 10;
+        // Base flow + Auto points (every 100ms)
+        const baseFlow = 0.1;
+        seconds += baseFlow + (autoSecondsPerSecond * multiplier) / 10;
         updateClickerUI();
         renderClock();
     }, 100);
