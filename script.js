@@ -51,18 +51,114 @@ class StarManager {
     }
 }
 
-const Star = new StarManager();
+// --- PARTICLE SYSTEM ---
+class ParticleSystem {
+    constructor() {
+        this.particles = [];
+    }
+
+    spawn(x, y, count = 10) {
+        for (let i = 0; i < count; i++) {
+            this.particles.push({
+                x, y,
+                vx: (Math.random() - 0.5) * 10,
+                vy: (Math.random() - 0.5) * 10,
+                life: 1.0,
+                color: Math.random() > 0.5 ? '#22d3ee' : '#f0abfc'
+            });
+        }
+    }
+
+    updateAndRender(ctx) {
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            const p = this.particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.life -= 0.02;
+            p.vx *= 0.95;
+            p.vy *= 0.95;
+
+            if (p.life <= 0) {
+                this.particles.splice(i, 1);
+            } else {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+    }
+}
+const Particles = new ParticleSystem();
+
+// --- INTERACTION ---
+function handleInteraction(e) {
+    // 1. Visual Feedback
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Check if clicked near center star
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const dist = Math.sqrt((x - cx) ** 2 + (y - cy) ** 2);
+
+    if (dist < 150) {
+        // Successful Click
+        gameState.energy += (1 * gameState.multiplier);
+        gameState.pulse = 1.0; // Pulse jump
+        Star.pulse = 0.5; // Visual jump
+        Particles.spawn(x, y, 8);
+        updateUI();
+    }
+}
+
+// Bind click for both canvas and overlay clickZone
+document.getElementById('clickZone').addEventListener('click', handleInteraction);
+canvas.addEventListener('click', handleInteraction);
+
+// --- UI LOGIC ---
+function updateUI() {
+    document.getElementById('energyVal').innerText = Math.floor(gameState.energy).toLocaleString();
+
+    // Level progress
+    const nextLevel = gameState.level * 1000;
+    const progress = (gameState.energy % nextLevel) / nextLevel * 100;
+    document.getElementById('levelProgress').style.width = `${progress}%`;
+}
+
+function switchPanel(panelId) {
+    const panels = ['upgrades', 'stats', 'birth'];
+    const container = document.getElementById('panelContainer');
+
+    // Toggle container visibility
+    if (container.classList.contains('hidden')) {
+        container.classList.remove('hidden');
+    }
+
+    // Hide all, show target
+    panels.forEach(p => {
+        document.getElementById(`${p}Panel`).classList.add('hidden');
+    });
+    document.getElementById(`${panelId}Panel`).classList.remove('hidden');
+
+    // Update buttons
+    document.querySelectorAll('.deck-btn').forEach(btn => btn.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+}
+window.switchPanel = switchPanel; // Make global for HTML onclick
 
 // --- GAME LOOP ---
 function gameLoop() {
     const now = Date.now();
     gameState.lastTick = now;
 
-    // Clear with semi-transparent black for trail effect? No, clean clear for crisp visuals
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Render center star
     Star.render(ctx, canvas.width, canvas.height);
+    Particles.updateAndRender(ctx);
 
     requestAnimationFrame(gameLoop);
 }
