@@ -50,7 +50,7 @@ func main() {
 	os.MkdirAll("data/events/en", 0755)
 
 	// 2. 정적 파일 서버 설정
-	fs := http.FileServer(http.Dir("./static"))
+	fs := http.FileServer(http.Dir("./"))
 	http.Handle("/", fs)
 
 	// 3. API 핸들러
