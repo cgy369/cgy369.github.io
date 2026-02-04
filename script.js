@@ -546,6 +546,14 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTree(); // Added: Tree grows with time
     }, 100);
 
+    // Auto-save every 60 seconds
+    setInterval(saveGame, 60000);
+
+    // Save on exit
+    window.addEventListener('beforeunload', () => {
+        saveGame();
+    });
+
     // Initial API calls
     fetchTrivia();
     fetchFact();
