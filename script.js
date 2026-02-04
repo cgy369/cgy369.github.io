@@ -56,12 +56,18 @@ function switchTab(tabId) {
 
     const titleEl = document.getElementById('mainTitle');
     const subtitleEl = document.getElementById('mainSubtitle');
+    const scoreEl = document.querySelector('.user-stats');
 
     if (titleEl && titleMap[tabId]) {
         titleEl.innerText = titleMap[tabId].t;
     }
     if (subtitleEl && titleMap[tabId]) {
         subtitleEl.innerText = titleMap[tabId].s;
+    }
+
+    // Show/hide score badge based on tab
+    if (scoreEl) {
+        scoreEl.style.display = (tabId === 'games') ? 'flex' : 'none';
     }
 
     // Trigger visual updates
