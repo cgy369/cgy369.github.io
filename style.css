@@ -257,3 +257,59 @@ canvas#cosmosCanvas {
     font-size: 1.5rem;
     cursor: pointer;
 }
+
+/* Toggle Switch */
+.panel-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.panel-header-row h3 {
+    border: none;
+    margin: 0;
+}
+
+.toggle-switch {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: var(--neon-blue);
+}
+
+.toggle-switch input {
+    display: none;
+}
+
+.slider {
+    width: 34px;
+    height: 18px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    position: relative;
+    transition: 0.3s;
+}
+
+.slider::before {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: 0.3s;
+}
+
+input:checked+.slider {
+    background: var(--neon-purple);
+}
+
+input:checked+.slider::before {
+    transform: translateX(16px);
+}

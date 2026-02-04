@@ -73,7 +73,14 @@
             <div id="panelContainer" class="panel-slider hidden">
                 <!-- Upgrade Panel -->
                 <div id="upgradesPanel" class="sub-panel">
-                    <h3>Stellar Evolution</h3>
+                    <div class="panel-header-row">
+                        <h3>Stellar Evolution</h3>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="autoEvolveToggle" onclick="toggleAutoEvolve()">
+                            <span class="slider"></span>
+                            <span class="toggle-label">AutoEvolve</span>
+                        </label>
+                    </div>
                     <div class="upgrade-list" id="upgradeList">
                         <!-- Dynamic Upgrades -->
                     </div>
