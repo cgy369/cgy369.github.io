@@ -534,6 +534,37 @@ h1 {
     border: 1px solid var(--glass-border);
 }
 
+/* Chronos Tree Simulation */
+.chronos-tree-container {
+    width: 100%;
+    height: 500px;
+    background: linear-gradient(to bottom, #050505 0%, #0a0a05 70%, #1a1a0a 100%);
+    border-radius: 30px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--glass-border);
+    margin: 1.5rem 0;
+}
+
+#treeCanvas {
+    display: block;
+}
+
+#treeStatus {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    color: #a3e635;
+    /* lime-400 */
+    border: 1px solid rgba(163, 230, 53, 0.2);
+    font-weight: 500;
+}
+
 @media (max-width: 1100px) {
     .daily-grid {
         grid-template-columns: 1fr;

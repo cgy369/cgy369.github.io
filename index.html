@@ -217,6 +217,20 @@
                 </div>
 
                 <div class="daily-card" style="margin-top: 2rem;">
+                    <h3>Chronos Tree (Idle Growth)</h3>
+                    <p style="font-size: 0.9rem; color: var(--text-dim); margin-bottom: 1rem;">축적된 시간(`seconds`)이 거대한
+                        나무로 피어납니다. 성장을 지켜보며 여유를 느껴보세요.</p>
+                    <div id="chronosTreeContainer" class="chronos-tree-container">
+                        <canvas id="treeCanvas"></canvas>
+                        <div id="treeStatus">Growth: 0%</div>
+                    </div>
+                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: center;">
+                        <button onclick="growTreeOnce()" class="btn-refresh">시간의 영양제 주기</button>
+                        <button onclick="resetTree()" class="btn-refresh">나무 초기화</button>
+                    </div>
+                </div>
+
+                <div class="daily-card" style="margin-top: 2rem;">
             </section>
         </main>
 

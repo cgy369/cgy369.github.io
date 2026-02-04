@@ -287,9 +287,106 @@ function createParticle(x, y) {
     setTimeout(() => p.remove(), 800);
 }
 
+// --- Chronos Tree Simulation ---
+let treeGrowth = 0;
+let lastTreeSec = 0;
+
+function initChronosTree() {
+    const canvas = document.getElementById('treeCanvas');
+    const container = document.getElementById('chronosTreeContainer');
+    if (!canvas || !container) return;
+
+    const resize = () => {
+        canvas.width = container.clientWidth * window.devicePixelRatio;
+        canvas.height = container.clientHeight * window.devicePixelRatio;
+        canvas.style.width = `${container.clientWidth}px`;
+        canvas.style.height = `${container.clientHeight}px`;
+        renderTree();
+    }
+    window.addEventListener('resize', resize);
+    resize();
+}
+
+function renderTree() {
+    const canvas = document.getElementById('treeCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+
+    ctx.clearRect(0, 0, w, h);
+
+    // Growth level based on seconds (logarithmic growth for long-term play)
+    // 100% Growth at approx 1 day (86400s)
+    const level = Math.min(1.2, Math.log10(seconds + 1) / 5 + 0.1);
+    treeGrowth = level;
+    document.getElementById('treeStatus').innerText = `Growth: ${Math.floor(level * 100)}%`;
+
+    ctx.save();
+    ctx.translate(w / 2, h - 20);
+    // Base trunk thickness and length
+    const initialLen = h * 0.25 * level;
+    drawBranch(ctx, initialLen, 12 * level, 0);
+    ctx.restore();
+}
+
+function drawBranch(ctx, len, thick, angle) {
+    if (len < 5) {
+        // Draw Leaf
+        ctx.beginPath();
+        ctx.arc(0, 0, 3, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(163, 230, 53, ${0.4 + Math.random() * 0.4})`; // lime-400
+        ctx.fill();
+        return;
+    }
+
+    ctx.save();
+    ctx.rotate(angle * Math.PI / 180);
+
+    // Branch line
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, -len);
+    ctx.strokeStyle = `rgba(139, 94, 60, ${0.8 + Math.random() * 0.2})`; // brownish
+    ctx.lineWidth = thick;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    ctx.translate(0, -len);
+
+    // Recursive children
+    const nextLen = len * (0.7 + Math.random() * 0.1);
+    const nextThick = thick * 0.7;
+
+    // Always split into two or three
+    drawBranch(ctx, nextLen, nextThick, -25 + (Math.random() * 10));
+    drawBranch(ctx, nextLen, nextThick, 25 - (Math.random() * 10));
+    if (len > 30) {
+        drawBranch(ctx, nextLen * 0.6, nextThick, (Math.random() - 0.5) * 40);
+    }
+
+    ctx.restore();
+}
+
+function growTreeOnce() {
+    // Inject "Virtual Nutrients" (temporary jump in visual level)
+    seconds += 3600; // +1 hour worth of growth visually
+    updateClickerUI();
+    renderTree();
+}
+
+function resetTree() {
+    if (confirm("정말로 나무를 처음부터 다시 키우시겠습니까?")) {
+        seconds = 0;
+        updateClickerUI();
+        renderTree();
+    }
+}
+
 // --- Initialize ---
 document.addEventListener('DOMContentLoaded', () => {
     switchTab('daily');
+    initChronosTree(); // Added Chronos Tree initialization
 
     // Restore state
     const saved = localStorage.getItem('clicker_v2');
@@ -315,6 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
         seconds += baseFlow + (autoSecondsPerSecond * multiplier) / 10;
         updateClickerUI();
         renderClock();
+        renderTree(); // Added: Tree grows with time
     }, 100);
 
     // Initial API calls
