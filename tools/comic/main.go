@@ -83,11 +83,10 @@ func main() {
 }
 
 func getStoryboardFromGemini(issue string) ([]string, string) {
-	prompt := fmt.Sprintf(`Create a 4-panel comic strip storyboard about this issue: "%s".
-Return exactly 5 lines:
-Line 1: A short artistic title for the comic.
-Line 2-5: A detailed English description for each of the 4 panels (for an AI image generator). 
-Focus on visual descriptions. Minimal text.`, issue)
+	prompt := fmt.Sprintf(`오늘의 이슈인 "%s"를 주제로 한 4컷 만화 스토리보드를 만들어주세요.
+다음 형식을 엄격히 지켜서 딱 5줄의 텍스트만 출력하세요 (마크다운 기호 금지):
+1행: 만화의 제목 (예술적이고 짧게)
+2~5행: 각 컷에 대한 구체적인 시각적 묘사 (영어 프롬프트 형태, AI 이미지 생성기로 그릴 수 있도록 스타일, 조명, 구도를 포함하여 상세히 기술)`, issue)
 
 	payload := map[string]interface{}{
 		"contents": []interface{}{
@@ -122,21 +121,27 @@ Focus on visual descriptions. Minimal text.`, issue)
 		logFatal("Failed to decode Gemini response", err)
 	}
 
-	if len(result.Candidates) == 0 {
+	if len(result.Candidates) == 0 || len(result.Candidates[0].Content.Parts) == 0 {
+		fmt.Println("⚠️ Gemini returned empty storyboard. Using fallback.")
 		return []string{"Scene 1", "Scene 2", "Scene 3", "Scene 4"}, "Chronos Today"
 	}
 
 	fullText := result.Candidates[0].Content.Parts[0].Text
+	// Remove markdown code blocks if AI added them
+	fullText = strings.ReplaceAll(fullText, "```", "")
+
 	lines := strings.Split(strings.TrimSpace(fullText), "\n")
 
 	validLines := []string{}
 	for _, l := range lines {
-		if strings.TrimSpace(l) != "" {
-			validLines = append(validLines, strings.TrimSpace(l))
+		trimmed := strings.TrimSpace(l)
+		if trimmed != "" {
+			validLines = append(validLines, trimmed)
 		}
 	}
 
 	if len(validLines) < 5 {
+		fmt.Printf("⚠️  Gemini output too short (%d lines). Using partials.\n", len(validLines))
 		return []string{"P1", "P2", "P3", "P4"}, "Story of Today"
 	}
 
@@ -146,10 +151,10 @@ Focus on visual descriptions. Minimal text.`, issue)
 func generateAndSaveImageFree(desc string, path string) {
 	fmt.Printf("   -> Fetching panel: %s\n", desc)
 
-	// Use image.pollinations.ai for direct image link
-	seed := time.Now().UnixNano()
-	encodedPrompt := url.PathEscape("comic book style, vibrant colors, clean lines: " + desc)
-	apiURL := fmt.Sprintf("https://image.pollinations.ai/prompt/%s?width=1024&height=1024&seed=%d&nologo=true", encodedPrompt, seed)
+	// Reverting to pollinators.ai/p with robust headers and random seed
+	seed := time.Now().UnixNano() % 1000000
+	encodedPrompt := url.PathEscape("digital art, vibrant, highly detailed: " + desc)
+	apiURL := fmt.Sprintf("https://pollinations.ai/p/%s?width=1024&height=1024&seed=%d&nologo=true", encodedPrompt, seed)
 
 	err := downloadFile(apiURL, path)
 	if err != nil {
@@ -162,20 +167,30 @@ func saveMetadata(m ComicMetadata) {
 	os.WriteFile(filepath.Join("assets", "comics", "today", "metadata.json"), data, 0644)
 }
 
-func downloadFile(url, filepath string) error {
-	resp, err := http.Get(url)
+func downloadFile(targetUrl, filepath string) error {
+	client := &http.Client{Timeout: 30 * time.Second}
+	req, err := http.NewRequest("GET", targetUrl, nil)
+	if err != nil {
+		return err
+	}
+
+	// Add Browser-like headers to avoid being blocked
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+	req.Header.Set("Accept", "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8")
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("bad status: %s", resp.Status)
+		return fmt.Errorf("bad status: %s (URL: %s)", resp.Status, targetUrl)
 	}
 
-	// Verify Content-Type is actually an image
+	// Verify Content-Type
 	contentType := resp.Header.Get("Content-Type")
-	if !strings.HasPrefix(contentType, "image/") {
+	if !strings.HasPrefix(contentType, "image/") && !strings.Contains(contentType, "application/octet-stream") {
 		return fmt.Errorf("invalid content type: %s (expected image/*)", contentType)
 	}
 
