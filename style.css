@@ -308,6 +308,50 @@ body {
     letter-spacing: 2px;
 }
 
+.cheader p.subtitle {
+    font-size: 1rem;
+    opacity: 0.7;
+    margin: 0;
+}
+
+/* Tab Navigation */
+.tabs-nav {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin: 2rem 0;
+    padding: 0 2rem;
+}
+
+.tab-btn {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    backdrop-filter: blur(10px);
+}
+
+.tab-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent-color);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.tab-btn.active {
+    background: linear-gradient(135deg, var(--accent-color), var(--accent-glow));
+    border-color: var(--accent-color);
+    color: #fff;
+    box-shadow: 0 4px 20px var(--accent-glow);
+}
+
+/* Stage Module Management */
+
 .card-body {
     font-size: 1.25rem;
     line-height: 1.7;
