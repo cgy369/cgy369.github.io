@@ -369,10 +369,15 @@ function updateClickerUI() {
         rebirthBtn.disabled = seconds < rebirthThreshold;
     }
 
-    // Save state
+    // Save state (MOVED to separate interval)
+    // localStorage.setItem('clicker_v2', JSON.stringify({ ... }));
+}
+
+function saveGame() {
     localStorage.setItem('clicker_v2', JSON.stringify({
         seconds, autoRate: autoSecondsPerSecond, multiplier, rebirthCount, upgradeCosts, upgradeOwned
     }));
+    console.log('💾 Game Saved');
 }
 
 function buyUpgrade(id) {
@@ -873,24 +878,29 @@ function copyPrompt() {
 // Reset all game data
 // Reset all game data
 function resetAllGames() {
+    console.log('🔄 Initiating full game reset...');
     if (confirm('⚠️ 모든 게임 데이터(점수, 나무 성장, 은하 등)가 초기화됩니다. 계속하시겠습니까?')) {
-        // 1. Stop Auto-save loops (if any)
-        // (Assuming simple structure, just clearing data is key)
 
-        // 2. Clear LocalStorage
+        // 1. Explicitly remove all known keys
+        const keysToRemove = ['chronos_save', 'game_records', 'zen_galaxy_save', 'tree_growth']; // Add any other keys you use
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+
+        // 2. Clear everything else just in case
         localStorage.clear();
+        console.log('🗑️ LocalStorage cleared.');
 
-        // 3. Reset Memory Variables (Critical to prevent auto-save overwrite)
+        // 3. Reset Memory Variables
+        seconds = 0;
         score = 0;
-        autoRate = 0;
+        autoSecondsPerSecond = 0;
         multiplier = 1;
-        clickValue = 1;
-        treeGrowth = 0;
-        zenParticles = [];
+        rebirthCount = 0;
 
-        // 4. Force Reload
-        alert('✅ 모든 데이터가 초기화되었습니다. 페이지를 새로고침합니다.');
-        location.replace(location.href); // Hard reload
+        // 4. Force Reload with slight delay to ensure storage sync
+        alert('✅ 데이터가 초기화되었습니다.');
+        setTimeout(() => {
+            window.location.reload();
+        }, 100);
     }
 }
 
