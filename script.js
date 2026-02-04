@@ -1,27 +1,38 @@
-const HISTORICAL_BIRTHS = {
-    1950: { "Global": 92000000, "KR": 630000, "US": 3600000, "CN": 20000000, "IN": 15000000, "JP": 2300000 },
-    1960: { "Global": 112000000, "KR": 1000000, "US": 4200000, "CN": 25000000, "IN": 18000000, "JP": 1600000 },
-    1970: { "Global": 120000000, "KR": 1000000, "US": 3700000, "CN": 27000000, "IN": 22000000, "JP": 1900000 },
-    1980: { "Global": 125000000, "KR": 860000, "US": 3600000, "CN": 18000000, "IN": 25000000, "JP": 1500000 },
-    1990: { "Global": 139000000, "KR": 650000, "US": 4100000, "CN": 24000000, "IN": 28000000, "JP": 1200000 },
-    2000: { "Global": 131000000, "KR": 630000, "US": 4000000, "CN": 17000000, "IN": 27000000, "JP": 1100000 },
-    2010: { "Global": 139000000, "KR": 470000, "US": 4000000, "CN": 16000000, "IN": 27000000, "JP": 1000000 },
-    2020: { "Global": 134000000, "KR": 270000, "US": 3600000, "CN": 12000000, "IN": 24000000, "JP": 840000 }
+// --- Constants & Global State ---
+let seconds = 0;
+let autoSecondsPerSecond = 0;
+let multiplier = 1;
+let rebirthCount = 0;
+let clockType = 'analog'; // analog, digital, sundial, water
+const rebirthThreshold = 1000000;
+
+let upgradeCosts = {
+    auto1: 15,
+    auto10: 100,
+    auto100: 1000
+};
+let upgradeOwned = {
+    auto1: 0,
+    auto10: 0,
+    auto100: 0
 };
 
-// --- Tab System ---
+// --- Tab Navigation ---
 function switchTab(tabId) {
     document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
 
-    document.getElementById(`${tabId}Section`).classList.add('active');
-    document.querySelector(`.tab-btn[onclick="switchTab('${tabId}')"]`).classList.add('active');
+    const activeSec = document.getElementById(`${tabId}Section`);
+    if (activeSec) activeSec.classList.add('active');
+
+    const activeBtn = document.querySelector(`.tab-btn[onclick="switchTab('${tabId}')"]`);
+    if (activeBtn) activeBtn.classList.add('active');
 
     // UI Feedback for main title
     const titles = {
-        'daily': { main: '오늘의 즐거움', sub: '매일 새로운 상식과 퀴즈로 두뇌를 깨워보세요' },
-        'discovery': { main: '생일의 발견', sub: '당신이 태어난 날의 비밀을 확인해보세요' },
-        'games': { main: '미니게임 창고', sub: '기록을 갱신하고 두뇌 게임을 즐겨보세요' }
+        'daily': { main: 'Daily Pleasure', sub: '매일 새로운 상식과 퀴즈로 두뇌를 깨워보세요' },
+        'discovery': { main: 'Birth Secret', sub: '당신이 태어난 날의 비밀을 확인해보세요' },
+        'games': { main: 'Time & Play', sub: '시간을 벌고 기록을 갱신해보세요' }
     };
     if (titles[tabId]) {
         document.getElementById('mainTitle').innerText = titles[tabId].main;
@@ -29,986 +40,519 @@ function switchTab(tabId) {
     }
 }
 
-// --- Daily Fun APIs ---
-async function fetchTrivia() {
-    const content = document.getElementById('triviaContent');
-    content.innerText = "문제를 내는 중...";
-    try {
-        const res = await fetch('https://opentdb.com/api.php?amount=1&type=multiple');
-        const data = await res.json();
-        if (data.results && data.results.length > 0) {
-            const q = data.results[0];
-            content.innerHTML = `
-                <div style="font-weight: bold; margin-bottom: 0.5rem;">[${q.category}]</div>
-                <div>${q.question}</div>
-                <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 1rem;">* 정답은 마우스를 올리면 보입니다.</div>
-                <div class="answer-hint" title="${q.correct_answer}" style="cursor: help; color: transparent;">${q.correct_answer}</div>
-            `;
-        }
-    } catch (e) { content.innerText = "퀴즈를 가져오지 못했습니다."; }
-}
+// --- Clock Rendering Logic ---
+function setClockType(type) {
+    clockType = type;
+    document.querySelectorAll('.selector-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`.selector-btn[onclick="setClockType('${type}')"]`).classList.add('active');
 
-async function fetchFact() {
-    const content = document.getElementById('factContent');
-    content.innerText = "상식을 찾는 중...";
-    try {
-        const res = await fetch('https://uselessfacts.jsph.pl/random.json?language=en');
-        const data = await res.json();
-        content.innerText = data.text;
-    } catch (e) { content.innerText = "상식을 가져오지 못했습니다."; }
-}
+    const digitalView = document.getElementById('digitalView');
+    const clockCanvas = document.getElementById('clockCanvas');
 
-async function fetchDailyHistory() {
-    const content = document.getElementById('dailyHistoryContent');
-    const today = new Date();
-    const month = today.getMonth() + 1;
-    const day = today.getDate();
-    try {
-        const titleKO = `${month}월_${day}일`;
-        const resKO = await fetch(`https://ko.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(titleKO)}&prop=wikitext&format=json&origin=*`);
-        const dataKO = await resKO.json();
-        if (dataKO.parse) {
-            const events = parseWiki(dataKO.parse.wikitext['*'], 0, 'ko').slice(0, 3); // Get 3 random/top events
-            content.innerHTML = events.map(e => `<div>• ${e.text.replace('[사건] ', '')}</div>`).join('');
-        }
-    } catch (e) { content.innerText = "역사 정보를 가져오지 못했습니다."; }
-}
-
-function revealFortune() {
-    const fortunes = [
-        "오늘의 당신은 매우 빛날 운명입니다! 새로운 도전을 시작해보세요.",
-        "작은 인연이 큰 행복으로 다가오는 날입니다. 주변 사람에게 먼저 인사해보세요.",
-        "생각지도 못한 곳에서 행운의 소식이 들려올 거예요. 차분히 기다려보세요.",
-        "오늘은 휴식이 필요한 날입니다. 좋아하는 음악과 함께 여유를 즐기세요.",
-        "긍정적인 생각만 하세요! 당신의 긍정적인 에너지가 행운을 불러옵니다.",
-        "잊고 있던 무언가를 발견하게 될 날입니다. 책상 정리를 해보는 건 어떨까요?",
-        "오늘은 직관이 뛰어난 날입니다. 당신의 선택을 믿으세요."
-    ];
-    document.getElementById('fortuneContent').innerText = fortunes[Math.floor(Math.random() * fortunes.length)];
-}
-
-function calculateLocalZodiac(year) {
-    const gan = ["경", "신", "임", "계", "갑", "을", "병", "정", "무", "기"];
-    const ji = ["신", "유", "술", "해", "자", "축", "인", "묘", "진", "사", "오", "미"];
-    const elements = { "갑": "목", "을": "목", "병": "화", "정": "화", "무": "토", "기": "토", "경": "금", "신": "금", "임": "수", "계": "수" };
-    const colors = { "목": "청", "화": "적", "토": "황", "금": "백", "수": "흑" };
-    const animals = { "자": "쥐", "축": "소", "인": "호랑이", "묘": "토끼", "진": "용", "사": "뱀", "오": "말", "미": "양", "신": "원숭이", "유": "닭", "술": "개", "해": "돼지" };
-
-    const gIdx = year % 10;
-    const jIdx = year % 12;
-    const h = gan[gIdx];
-    const e = ji[jIdx];
-    const element = elements[h];
-    const color = colors[element];
-    const animal = animals[e];
-
-    return {
-        zodiac_name: `${color}${animal} (${h}${e}년)`,
-        color: color,
-        animal: animal,
-        element: element
-    };
-}
-
-function getLocalStarSign(month, day) {
-    if ((month == 3 && day >= 21) || (month == 4 && day <= 19)) return "양자리 (Aries)";
-    if ((month == 4 && day >= 20) || (month == 5 && day <= 20)) return "황소자리 (Taurus)";
-    if ((month == 5 && day >= 21) || (month == 6 && day <= 21)) return "쌍둥이자리 (Gemini)";
-    if ((month == 6 && day >= 22) || (month == 7 && day <= 22)) return "게자리 (Cancer)";
-    if ((month == 7 && day >= 23) || (month == 8 && day <= 22)) return "사자자리 (Leo)";
-    if ((month == 8 && day >= 23) || (month == 9 && day <= 23)) return "처녀자리 (Virgo)";
-    if ((month == 9 && day >= 24) || (month == 10 && day <= 22)) return "천칭자리 (Libra)";
-    if ((month == 10 && day >= 23) || (month == 11 && day <= 22)) return "전갈자리 (Scorpio)";
-    if ((month == 11 && day >= 23) || (month == 12 && day <= 24)) return "사수자리 (Sagittarius)";
-    if ((month == 12 && day >= 25) || (month == 1 && day <= 19)) return "염소자리 (Capricorn)";
-    if ((month == 1 && day >= 20) || (month == 2 && day <= 18)) return "물병자리 (Aquarius)";
-    return "물고기자리 (Pisces)";
-}
-
-function estimateLocalBirths(year) {
-    let targetYear = Math.floor(year / 10) * 10;
-    if (targetYear < 1950) targetYear = 1950;
-    if (targetYear > 2020) targetYear = 2020;
-    const annualData = HISTORICAL_BIRTHS[targetYear] || HISTORICAL_BIRTHS[1990];
-    const result = {};
-    for (const country in annualData) {
-        const dailyTotal = Math.floor(annualData[country] / 365);
-        const male = Math.floor(dailyTotal * 0.512);
-        const female = dailyTotal - male;
-        result[country] = { total: dailyTotal, male: male, female: female };
-    }
-    return result;
-}
-
-async function fetchLocalEvents(year, month, day) {
-    const events = [];
-    try {
-        // Fetch Korean Wikipedia
-        const titleKO = `${month}월_${day}일`;
-        const resKO = await fetch(`https://ko.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(titleKO)}&prop=wikitext&format=json&origin=*`);
-        const dataKO = await resKO.json();
-        if (dataKO.parse) events.push(...parseWiki(dataKO.parse.wikitext['*'], year, 'ko'));
-
-        // Fetch English Wikipedia
-        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-        const titleEN = `${monthNames[month - 1]}_${day}`;
-        const resEN = await fetch(`https://en.wikipedia.org/w/api.php?action=parse&page=${encodeURIComponent(titleEN)}&prop=wikitext&format=json&origin=*`);
-        const dataEN = await resEN.json();
-        if (dataEN.parse) events.push(...parseWiki(dataEN.parse.wikitext['*'], year, 'en'));
-    } catch (e) { console.error("Wiki Fetch failed", e); }
-    return events;
-}
-
-function parseWiki(text, targetYear, lang) {
-    const results = [];
-    const lines = text.split('\n');
-    let section = "";
-
-    // If targetYear is 0, we match all years (for Daily History)
-    const yearPattern = targetYear === 0
-        ? (lang === 'ko' ? /[0-9]+년/ : /[0-9]+/)
-        : (lang === 'ko' ? new RegExp(`\\[\\[${targetYear}년\\]\\]|${targetYear}년`) : new RegExp(`\\[\\[${targetYear}\\]\\]|${targetYear}`));
-
-    for (let line of lines) {
-        const trimmed = line.trim();
-        if (trimmed.includes('== 사건 ==') || trimmed.includes('== Events ==')) section = "사건";
-        else if (trimmed.includes('== 탄생 ==') || trimmed.includes('== Births ==')) section = "탄생";
-        else if (trimmed.includes('== 사망 ==') || trimmed.includes('== Deaths ==')) section = "사망";
-
-        if (section && yearPattern.test(trimmed)) {
-            let cleanText = trimmed.replace(/^\*/, '').trim();
-            cleanText = cleanText.replace(/\[\[([^|\]]+\|)?([^\]]+)\]\]/g, '$2');
-            cleanText = cleanText.replace(/\{\{[^}]+\}\}/g, '');
-            if (cleanText) {
-                const prefix = lang === 'en' ? `[해외 ${section}]` : `[${section}]`;
-                results.push({ year: targetYear, text: `${prefix} ${cleanText}` });
-            }
-        }
-    }
-    return results;
-}
-
-async function discover() {
-    const birthDateInput = document.getElementById('birthDate').value;
-    if (!birthDateInput) {
-        alert('생년월일을 선택해주세요.');
-        return;
-    }
-
-    const date = new Date(birthDateInput);
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-
-    const resultSection = document.getElementById('resultSection');
-    const zodiacName = document.getElementById('zodiacName');
-    const zodiacDetails = document.getElementById('zodiacDetails');
-    const eventList = document.getElementById('eventList');
-    const birthStone = document.getElementById('birthStone');
-    const birthFlower = document.getElementById('birthFlower');
-    const flowerMeaning = document.getElementById('flowerMeaning');
-    const aiPromptText = document.getElementById('aiPromptText');
-    const statsGrid = document.getElementById('statsGrid');
-
-    try {
-        let data;
-        // Try Server Mode first
-        try {
-            const response = await fetch('/api/discovery', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ birth_date: birthDateInput }),
-            });
-            if (response.ok) {
-                data = await response.json();
-            } else {
-                throw new Error("Server not available");
-            }
-        } catch (serverErr) {
-            console.warn("Switching to Local Mode:", serverErr.message);
-            // Local Mode Fallback
-            const zodiac = calculateLocalZodiac(year);
-            const starSign = getLocalStarSign(month, day);
-            const population = estimateLocalBirths(year);
-            const events = await fetchLocalEvents(year, month, day);
-
-            // For Flower/Stone, we'd ideally port all 365 flowers, 
-            // but for brevity I'll use placeholders for missing ones or a subset
-            const stones = ["가넷", "자수정", "아쿠아마린", "다이아몬드", "에메랄드", "진주", "루비", "페리도트", "사파이어", "오팔", "토파즈", "터키석"];
-            data = {
-                zodiac: zodiac,
-                star_sign: starSign,
-                population: population,
-                events: events,
-                birth_element: { stone: stones[month - 1], flower: "탄생화 정보는 서버 모드에서 더 정확합니다", meaning: "아름다운 탄생" },
-                ai_prompt: `A cinematic masterpiece of a ${zodiac.color} ${zodiac.animal}, symbolic of your birth.`
-            };
-        }
-
-        // UI Update logic (same as before)
-        zodiacName.innerText = data.zodiac.zodiac_name;
-        zodiacDetails.innerHTML = `
-            <div style="margin-bottom: 0.5rem;">${data.zodiac.color}색 ${data.zodiac.animal}의 해, ${data.zodiac.element}의 기운을 타고났습니다.</div>
-            <div style="font-size: 1.5rem; color: #fbbf24; font-weight: 700;">✨ 당신의 별자리: ${data.star_sign}</div>
-        `;
-
-        birthStone.innerText = data.birth_element.stone;
-        birthFlower.innerText = data.birth_element.flower;
-        flowerMeaning.innerText = data.birth_element.meaning;
-        aiPromptText.innerText = data.ai_prompt;
-
-        statsGrid.innerHTML = '';
-        const sortedCountries = Object.keys(data.population).sort((a, b) => {
-            const priority = { 'global': 1, 'kr': 2, 'south korea': 2 };
-            const aPrio = priority[a.toLowerCase()] || 3;
-            const bPrio = priority[b.toLowerCase()] || 3;
-            return aPrio - bPrio || a.localeCompare(b);
-        });
-
-        const countryNames = { 'Global': '전세계', 'KR': '대한민국', 'South Korea': '대한민국' };
-        sortedCountries.forEach(country => {
-            const stats = data.population[country];
-            const card = document.createElement('div');
-            card.className = 'stat-card';
-            card.innerHTML = `
-                <span class="stat-value">${stats.total.toLocaleString()}명</span>
-                <div class="gender-info"><span class="male">♂ ${stats.male.toLocaleString()}</span><span class="female">♀ ${stats.female.toLocaleString()}</span></div>
-                <span class="stat-label">${countryNames[country] || country}</span>
-            `;
-            statsGrid.appendChild(card);
-        });
-
-        eventList.innerHTML = '<h3 style="margin-bottom: 1.5rem;">당신이 태어난 날과 연관된 기록</h3>';
-        if (data.events && data.events.length > 0) {
-            data.events.forEach(event => {
-                const item = document.createElement('div');
-                item.className = 'event-item';
-                const yearVal = event.year || '역사';
-                const textVal = event.text;
-                item.innerHTML = `
-                    <div class="event-text"><span class="event-year" style="background: var(--accent-color); color: var(--primary-bg); padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-right: 8px;">${yearVal}년</span><span>${textVal}</span></div>
-                    <a href="https://www.google.com/search?q=${encodeURIComponent(yearVal + '년 ' + textVal)}" target="_blank" class="btn-search">검색</a>
-                `;
-                eventList.appendChild(item);
-            });
-        } else {
-            eventList.innerHTML += '<p style="color: var(--text-dim);">이 날짜의 기록을 찾을 수 없습니다.</p>';
-        }
-
-        resultSection.style.display = 'block';
-        resultSection.scrollIntoView({ behavior: 'smooth' });
-
-    } catch (error) {
-        alert("정보를 가져오는 중 오류가 발생했습니다.");
-        console.error(error);
-    }
-}
-
-function copyPrompt() {
-    const promptText = document.getElementById('aiPromptText').innerText;
-    navigator.clipboard.writeText(promptText).then(() => {
-        alert('프롬프트가 복사되었습니다!');
-    }).catch(err => {
-        console.error('복사 실패:', err);
-    });
-}
-
-// Tic-Tac-Toe Upgrade Game Logic
-let boardState = ["", "", "", "", "", "", "", "", ""];
-let currentPlayer = "X"; // User is X
-let gameActive = true;
-let currentLevel = 1;
-
-// History for Level 2 (Queue up to 3 slots)
-let moveHistory = { "X": [], "O": [] };
-
-const winningConditions = [
-    [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
-    [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
-    [0, 4, 8], [2, 4, 6]             // Diagonals
-];
-
-const levelSettings = {
-    1: "기본 틱택토: 3줄을 먼저 완성하세요!",
-    2: "기록의 틱택토: 4번째 말을 두면 1번째 말이 사라집니다.",
-    3: "운명의 틱택토: 상대방 위에 올리면 중립말(N)이 됩니다!",
-    4: "중력의 틱택토: 말을 두면 해당 줄의 가장 아래로 떨어집니다!",
-    5: "오염의 틱택토 (4x4): 4줄을 완성하세요! 상대 옆에 두면 오염 될 수 있습니다.",
-    6: "회전의 틱택토 (4x4): 3턴마다 보드가 90도 회전합니다!",
-    7: "슈퍼 틱택토 (Ultimate): 틱택토 안의 틱택토! 최후의 두뇌 싸움입니다."
-};
-
-let totalTurns = 0;
-
-// Record Management
-let clearRecords = { wins: {}, failures: {} };
-async function loadGameRecords() {
-    try {
-        const response = await fetch('/api/records/get');
-        if (!response.ok) throw new Error();
-        const data = await response.json();
-        clearRecords.wins = data.wins || {};
-        clearRecords.failures = data.failures || {};
-    } catch (err) {
-        console.warn("Global records unavailable, loading from LocalStorage");
-        const localData = localStorage.getItem('game_records');
-        if (localData) {
-            const parsed = JSON.parse(localData);
-            clearRecords.wins = parsed.wins || {};
-            clearRecords.failures = parsed.failures || {};
-        }
-    }
-    updateRecordsUI();
-}
-
-async function incrementRecord(level, type = 'win') {
-    const key = type === 'win' ? 'wins' : 'failures';
-    clearRecords[key][level] = (clearRecords[key][level] || 0) + 1;
-
-    // UI Update immediately
-    updateRecordsUI();
-
-    try {
-        const response = await fetch('/api/records/increment', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                level: level.toString(),
-                type: type
-            })
-        });
-        if (!response.ok) throw new Error();
-        const data = await response.json();
-        clearRecords.wins = data.wins;
-        clearRecords.failures = data.failures;
-        updateRecordsUI();
-    } catch (err) {
-        console.warn("Failed to sync with server, saving to LocalStorage");
-        localStorage.setItem('game_records', JSON.stringify(clearRecords));
-    }
-}
-
-function updateRecordsUI() {
-    const list = document.getElementById('recordsList');
-    if (!list) return;
-    list.innerHTML = "";
-    for (let i = 1; i <= 7; i++) {
-        const item = document.createElement('div');
-        item.className = 'record-item';
-        item.innerHTML = `
-            <span class="record-level">LV ${i}</span>
-            <div class="record-badges">
-                <span class="record-count success" title="성공">${clearRecords.wins[i] || 0}</span>
-                <span class="record-count failure" title="실패">${clearRecords.failures[i] || 0}</span>
-            </div>
-        `;
-        list.appendChild(item);
-    }
-}
-
-function handleCellClick(clickedCellEvent) {
-    const cell = clickedCellEvent.target;
-    if (!gameActive || currentPlayer === "O") return;
-
-    if (currentLevel === 7) {
-        const boardIdx = parseInt(cell.getAttribute('data-board-idx'));
-        const cellIdx = parseInt(cell.getAttribute('data-cell-idx'));
-
-        // Check valid board
-        if (nextActiveBoard !== -1 && boardIdx !== nextActiveBoard) return;
-        // Check already taken in mini-board
-        if (miniBoards[boardIdx][cellIdx] !== "") return;
-        // Check if mini-board is already decided
-        if (globalBoard[boardIdx] !== "") return;
-
-        makeSuperMove(boardIdx, cellIdx);
+    if (type === 'digital') {
+        digitalView.style.display = 'block';
+        clockCanvas.style.display = 'none';
     } else {
-        let index = parseInt(cell.getAttribute('data-index'));
-        // Rule for Level 4: Gravity
-        if (currentLevel === 4) {
-            index = getGravityIndex(index);
-            if (index === -1) return; // Column full
-        }
-
-        // Rule for Level 3: Overlaying
-        if (currentLevel === 3) {
-            if (boardState[index] === "N") return;
-            if (boardState[index] === "X") return;
-        } else {
-            if (boardState[index] !== "") return;
-        }
-
-        makeMove(index);
+        digitalView.style.display = 'none';
+        clockCanvas.style.display = 'block';
     }
 }
 
-function getGravityIndex(clickedIndex) {
-    const size = currentLevel === 5 ? 4 : 3;
-    const col = clickedIndex % size;
-    for (let r = size - 1; r >= 0; r--) {
-        const idx = r * size + col;
-        if (boardState[idx] === "") return idx;
+function renderClock() {
+    const canvas = document.getElementById('clockCanvas');
+    if (!canvas || canvas.offsetParent === null) return;
+    const ctx = canvas.getContext('2d');
+    const now = new Date();
+
+    // Set canvas resolution
+    const size = 280;
+    canvas.width = size * 2;
+    canvas.height = size * 2;
+    canvas.style.width = `${size}px`;
+    canvas.style.height = `${size}px`;
+    ctx.scale(2, 2);
+
+    ctx.clearRect(0, 0, size, size);
+    const centerX = size / 2;
+    const centerY = size / 2;
+    const radius = size / 2 - 10;
+
+    if (clockType === 'analog') {
+        drawAnalogClock(ctx, centerX, centerY, radius, now);
+    } else if (clockType === 'sundial') {
+        drawSundial(ctx, centerX, centerY, radius, now);
+    } else if (clockType === 'water') {
+        drawWaterClock(ctx, centerX, centerY, radius, now);
     }
-    return -1;
+
+    // Update digital text anyway
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    document.getElementById('digitalView').innerText = `${h}:${m}:${s}`;
 }
 
-function makeMove(index) {
-    let targetState = currentPlayer;
-    const size = currentLevel === 5 ? 4 : 3;
+function drawAnalogClock(ctx, x, y, r, now) {
+    // Face
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 2;
+    ctx.stroke();
 
-    // LV 3 Rule: Overlaying
-    if (currentLevel === 3 && boardState[index] !== "" && boardState[index] !== currentPlayer) {
-        targetState = "N";
+    // Marks
+    for (let i = 0; i < 12; i++) {
+        const ang = (i * Math.PI) / 6;
+        ctx.beginPath();
+        ctx.moveTo(x + Math.cos(ang) * (r - 5), y + Math.sin(ang) * (r - 5));
+        ctx.lineTo(x + Math.cos(ang) * (r - 15), y + Math.sin(ang) * (r - 15));
+        ctx.stroke();
     }
 
-    boardState[index] = targetState;
-    const cell = document.querySelector(`.cell[data-index="${index}"]`);
-    cell.innerText = targetState;
-    cell.className = `cell taken ${targetState.toLowerCase()}`;
-    totalTurns++;
+    // Hands
+    const hr = now.getHours() % 12;
+    const min = now.getMinutes();
+    const sec = now.getSeconds();
 
-    // LV 6 Rule: Rotate every 3 turns
-    if (currentLevel === 6 && totalTurns > 0 && totalTurns % 3 === 0) {
-        setTimeout(rotateBoard, 500);
-    }
-
-    // LV 5, 6 Rule: Infection (LV 6 also inherits Infection for more fun)
-    if ((currentLevel === 5 || currentLevel === 6) && targetState !== "N") {
-        tryInfection(index);
-    }
-
-    // LV 2 Rule: History
-    if (currentLevel === 2) {
-        moveHistory[currentPlayer].push(index);
-        updateFadingHints();
-        if (moveHistory[currentPlayer].length > 3) {
-            const firstIdx = moveHistory[currentPlayer].shift();
-            boardState[firstIdx] = "";
-            const firstCell = document.querySelector(`.cell[data-index="${firstIdx}"]`);
-            firstCell.innerText = "";
-            firstCell.className = "cell";
-            updateFadingHints();
-        }
-    }
-
-    if (checkWin()) {
-        const winnerName = currentPlayer === 'X' ? '당신이' : '컴퓨터가';
-        document.getElementById('gameStatus').innerText = `✨ ${winnerName} 승리!`;
-        gameActive = false;
-
-        if (currentPlayer === 'X') {
-            incrementRecord(currentLevel, 'win');
-            if (currentLevel < 6) { // Level 6 added, so move until 6
-                setTimeout(() => {
-                    alert(`축하합니다! ${currentLevel}단계를 클리어했습니다. 다음 레벨로 이동합니다.`);
-                    currentLevel++;
-                    resetGame(true);
-                }, 1000);
-            } else if (currentLevel === 6) {
-                setTimeout(() => {
-                    alert("🌪️ 회전의 난관을 뚫고 7단계 최종 보스에게 도전할 자격을 얻으셨습니다!");
-                    currentLevel++;
-                    resetGame(true);
-                }, 1000);
-            } else {
-                setTimeout(() => alert("🥇 전설로 남을 고수십니다! 모든 단계를 정복하셨습니다!"), 500);
-            }
-        } else {
-            // Computer wins
-            incrementRecord(currentLevel, 'fail');
-        }
-        return;
-    }
-
-    if (!boardState.includes("") && currentLevel !== 2) {
-        document.getElementById('gameStatus').innerText = "🤝 비겼습니다!";
-        gameActive = false;
-        return;
-    }
-
-    currentPlayer = currentPlayer === "X" ? "O" : "X";
-    document.getElementById('gameStatus').innerText = currentPlayer === "X" ? "당신의 차례입니다 (X)" : "컴퓨터가 생각 중... (O)";
-
-    if (gameActive && currentPlayer === "O") {
-        setTimeout(computerMove, 700);
-    }
+    drawHand(ctx, x, y, (hr * Math.PI) / 6 + (min * Math.PI) / (6 * 60), r * 0.5, 4, '#fff');
+    drawHand(ctx, x, y, (min * Math.PI) / 30, r * 0.7, 3, '#94a3b8');
+    drawHand(ctx, x, y, (sec * Math.PI) / 30, r * 0.85, 2, '#38bdf8');
 }
 
-function tryInfection(pos) {
-    const size = 4;
-    const r = Math.floor(pos / size);
-    const c = pos % size;
-    const opponent = "X"; // Computers turn always tries to infect X
-
-    // Adjacent cells (Up, Down, Left, Right)
-    const neighbors = [
-        { r: r - 1, c: c }, { r: r + 1, c: c },
-        { r: r, c: c - 1 }, { r: r, c: c + 1 }
-    ];
-
-    neighbors.forEach(n => {
-        if (n.r >= 0 && n.r < size && n.c >= 0 && n.c < size) {
-            const idx = n.r * size + n.c;
-            const targetPlayer = currentPlayer === "X" ? "O" : "X";
-            if (boardState[idx] === targetPlayer && Math.random() < 0.3) { // 30% chance
-                boardState[idx] = currentPlayer;
-                const nCell = document.querySelector(`.cell[data-index="${idx}"]`);
-                nCell.innerText = currentPlayer;
-                nCell.className = `cell taken ${currentPlayer.toLowerCase()}`;
-                console.log(`Infected index ${idx} to ${currentPlayer}`);
-            }
-        }
-    });
+function drawHand(ctx, x, y, ang, length, width, color) {
+    ctx.beginPath();
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = color;
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + Math.sin(ang) * length, y - Math.cos(ang) * length);
+    ctx.stroke();
 }
 
-function computerMove() {
-    if (!gameActive) return;
+function drawSundial(ctx, x, y, r, now) {
+    // Base circle
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255, 180, 0, 0.1)';
+    ctx.fill();
+    ctx.strokeStyle = '#f59e0b';
+    ctx.stroke();
 
-    // High intelligence: can we win or block?
-    const size = (currentLevel === 5 || currentLevel === 6) ? 4 : 3;
-    const winConds = getWinConditions(size);
+    // Shadow line
+    const hr = now.getHours() + now.getMinutes() / 60;
+    const shadowAng = (hr - 6) * (Math.PI / 12); // Assume 6AM is left, 6PM is right
 
-    const getSim = (idx, player) => {
-        let tb = [...boardState];
-        if (currentLevel === 3 && tb[idx] !== "" && tb[idx] !== player) tb[idx] = "N";
-        else tb[idx] = player;
-        return tb;
-    };
-
-    // 1. Win
-    for (let i = 0; i < size * size; i++) {
-        if (canPlaceAt(i, "O")) {
-            if (checkWinSim(getSim(i, "O"), "O", winConds)) { doMove(i); return; }
-        }
-    }
-
-    // 2. Block
-    for (let i = 0; i < size * size; i++) {
-        if (canPlaceAt(i, "X")) {
-            if (checkWinSim(getSim(i, "X"), "X", winConds)) { doMove(i); return; }
-        }
-    }
-
-    // 3. Middle / Random
-    let available = [];
-    for (let i = 0; i < size * size; i++) {
-        if (canPlaceAt(i, "O")) available.push(i);
-    }
-
-    // Favor middle in 4x4 or 3x3
-    let mid = size === 3 ? [4] : [5, 6, 9, 10];
-    let preferred = mid.filter(m => available.includes(m));
-    if (preferred.length > 0) {
-        doMove(preferred[Math.floor(Math.random() * preferred.length)]);
-    } else {
-        doMove(available[Math.floor(Math.random() * available.length)]);
-    }
+    ctx.beginPath();
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + Math.cos(shadowAng) * r, y + Math.sin(shadowAng) * r);
+    ctx.stroke();
 }
 
-function canPlaceAt(index, player) {
-    if (currentLevel === 4) {
-        const size = 3;
-        const col = index % size;
-        for (let r = 0; r < size; r++) if (boardState[r * size + col] === "") return true;
-        return false;
-    }
-    if (currentLevel === 3) return boardState[index] !== "N" && boardState[index] !== player;
-    return boardState[index] === "";
+function drawWaterClock(ctx, x, y, r, now) {
+    const fillPercent = (now.getSeconds() / 60);
+    const waterY = y + r - (fillPercent * 2 * r);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.clip();
+
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.3)';
+    ctx.fillRect(x - r, waterY, r * 2, r * 2);
+
+    ctx.restore();
+    ctx.strokeStyle = '#38bdf8';
+    ctx.stroke();
 }
 
-function doMove(index) {
-    if (currentLevel === 4) index = getGravityIndex(index);
-    makeMove(index);
-}
-
-function getWinConditions(size) {
-    if (size === 3) return winningConditions;
-    let conds = [];
-    // Rows
-    for (let r = 0; r < 4; r++) conds.push([r * 4, r * 4 + 1, r * 4 + 2, r * 4 + 3]);
-    // Cols
-    for (let c = 0; c < 4; c++) conds.push([c, c + 4, c + 8, c + 12]);
-    // Diagonals
-    conds.push([0, 5, 10, 15]);
-    conds.push([3, 6, 9, 12]);
-    return conds;
-}
-
-function checkWinSim(board, player, conds) {
-    const ok = (val) => val === player || val === "N";
-    return conds.some(c => ok(board[c[0]]) && ok(board[c[1]]) && ok(board[c[2]]) && (c.length < 4 || ok(board[c[3]])));
-}
-
-function checkWin() {
-    const size = (currentLevel === 5 || currentLevel === 6) ? 4 : 3;
-    return checkWinSim(boardState, currentPlayer, getWinConditions(size));
-}
-
-// Super Tic-Tac-Toe State
-let miniBoards = Array(9).fill(null).map(() => Array(9).fill(""));
-let globalBoard = Array(9).fill("");
-let nextActiveBoard = -1; // -1 means free move
-
-function makeSuperMove(bIdx, cIdx) {
-    miniBoards[bIdx][cIdx] = currentPlayer;
-    const cell = document.querySelector(`.mini-cell[data-board-idx="${bIdx}"][data-cell-idx="${cIdx}"]`);
-    cell.innerText = currentPlayer;
-    cell.className = `cell mini-cell taken ${currentPlayer.toLowerCase()}`;
-
-    // 1. Check mini-board win
-    if (globalBoard[bIdx] === "" && checkWinSim(miniBoards[bIdx], currentPlayer, winningConditions)) {
-        globalBoard[bIdx] = currentPlayer;
-        const miniBoardEl = document.querySelector(`.mini-board[data-board-idx="${bIdx}"]`);
-        miniBoardEl.classList.add(`won-${currentPlayer.toLowerCase()}`);
-        miniBoardEl.setAttribute('data-winner', currentPlayer);
-    }
-
-    // 2. Set next active board
-    nextActiveBoard = cIdx;
-    // If the next mini-board is already finished or full, player gets a free move
-    if (globalBoard[nextActiveBoard] !== "" || !miniBoards[nextActiveBoard].includes("")) {
-        nextActiveBoard = -1;
-    }
-
-    // 3. Update UI Visuals
-    document.querySelectorAll('.mini-board').forEach((mb, idx) => {
-        mb.classList.remove('active');
-        if (nextActiveBoard === -1 || idx === nextActiveBoard) {
-            if (globalBoard[idx] === "" && miniBoards[idx].includes("")) {
-                mb.classList.add('active');
-            }
-        }
-    });
-
-    // 4. Check global win
-    if (checkWinSim(globalBoard, currentPlayer, winningConditions)) {
-        const winnerName = currentPlayer === 'X' ? '당신이' : '컴퓨터가';
-        document.getElementById('gameStatus').innerText = `🏆 슈퍼 틱택토 최종 승리: ${winnerName}!`;
-        gameActive = false;
-        if (currentPlayer === 'X') {
-            incrementRecord(7, 'win');
-            setTimeout(() => alert("🎆 전설로 남을 대기록입니다! 당신은 진정한 틱택토의 신입니다!"), 500);
-        } else {
-            incrementRecord(7, 'fail');
-        }
-        return;
-    }
-
-    if (!globalBoard.includes("") && !Array.prototype.concat(...miniBoards).includes("")) {
-        document.getElementById('gameStatus').innerText = "🤝 무승부입니다!";
-        gameActive = false;
-        return;
-    }
-
-    currentPlayer = currentPlayer === "X" ? "O" : "X";
-    document.getElementById('gameStatus').innerText = currentPlayer === "X" ? "당신의 차례입니다 (X)" : "컴퓨터가 생각 중... (O)";
-
-    if (gameActive && currentPlayer === "O") {
-        setTimeout(computerSuperMove, 800);
-    }
-}
-
-function computerSuperMove() {
-    if (!gameActive) return;
-
-    let targetBoardIdx = nextActiveBoard;
-    let availableBoards = [];
-
-    // If free move, choose a board that isn't won or full
-    if (targetBoardIdx === -1) {
-        for (let i = 0; i < 9; i++) {
-            if (globalBoard[i] === "" && miniBoards[i].includes("")) {
-                availableBoards.push(i);
-            }
-        }
-        // Priority: center board if empty, else random
-        if (availableBoards.includes(4)) targetBoardIdx = 4;
-        else targetBoardIdx = availableBoards[Math.floor(Math.random() * availableBoards.length)];
-    }
-
-    // AI logic within the target board
-    const currentMiniBoard = miniBoards[targetBoardIdx];
-    let availableCells = [];
-    for (let j = 0; j < 9; j++) {
-        if (currentMiniBoard[j] === "") availableCells.push(j);
-    }
-
-    // 1. Can win mini-board?
-    for (let c of availableCells) {
-        let temp = [...currentMiniBoard];
-        temp[c] = "O";
-        if (checkWinSim(temp, "O", winningConditions)) {
-            makeSuperMove(targetBoardIdx, c);
-            return;
-        }
-    }
-
-    // 2. Must block player?
-    for (let c of availableCells) {
-        let temp = [...currentMiniBoard];
-        temp[c] = "X";
-        if (checkWinSim(temp, "X", winningConditions)) {
-            makeSuperMove(targetBoardIdx, c);
-            return;
-        }
-    }
-
-    // 3. Strategic: center, corners, else random
-    const preferred = [4, 0, 2, 6, 8, 1, 3, 5, 7];
-    for (let p of preferred) {
-        if (availableCells.includes(p)) {
-            makeSuperMove(targetBoardIdx, p);
-            return;
-        }
-    }
-}
-
-function resetGame(isNewLevel = false) {
-    if (!isNewLevel) {
-        if (!confirm("정말 게임을 초기화하시겠습니까? (현재 레벨은 유지됩니다)")) return;
-        // 게임 진행 중에 다시 시작을 누르면 실패로 기록
-        if (gameActive) {
-            incrementRecord(currentLevel, 'fail');
-        }
-    }
-
-    currentPlayer = "X";
-    gameActive = true;
-    moveHistory = { "X": [], "O": [] };
-    totalTurns = 0;
-    nextActiveBoard = -1;
-    globalBoard = Array(9).fill("");
-    miniBoards = Array(9).fill(null).map(() => Array(9).fill(""));
-
-    document.getElementById('levelBadge').innerText = `LV ${currentLevel}`;
-    document.getElementById('levelDesc').innerText = levelSettings[currentLevel];
-    document.getElementById('gameStatus').innerText = "당신의 차례입니다 (X)";
-
-    const board = document.getElementById('board');
-    board.innerHTML = "";
-    board.className = "tictactoe-board"; // Fix: Match CSS selector
-
-    if (currentLevel === 7) {
-        board.classList.add('super-board');
-        board.style.gridTemplateColumns = `repeat(3, 1fr)`;
-        for (let i = 0; i < 9; i++) {
-            const miniBoard = document.createElement('div');
-            miniBoard.className = "mini-board";
-            miniBoard.setAttribute('data-board-idx', i);
-            for (let j = 0; j < 9; j++) {
-                const cell = document.createElement('div');
-                cell.className = "cell mini-cell";
-                cell.setAttribute('data-board-idx', i);
-                cell.setAttribute('data-cell-idx', j);
-                cell.addEventListener('click', handleCellClick);
-                miniBoard.appendChild(cell);
-            }
-            board.appendChild(miniBoard);
-        }
-    } else {
-        const size = (currentLevel === 5 || currentLevel === 6) ? 4 : 3;
-        boardState = new Array(size * size).fill("");
-        board.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
-        for (let i = 0; i < size * size; i++) {
-            const cell = document.createElement('div');
-            cell.className = "cell";
-            cell.setAttribute('data-index', i);
-            cell.addEventListener('click', handleCellClick);
-            board.appendChild(cell);
-        }
-    }
-}
-
-function updateFadingHints() {
-    document.querySelectorAll('.cell.fading').forEach(c => c.classList.remove('fading'));
-    if (currentLevel === 2) {
-        moveHistory.X.length === 3 && document.querySelector(`.cell[data-index="${moveHistory.X[0]}"]`)?.classList.add('fading');
-        moveHistory.O.length === 3 && document.querySelector(`.cell[data-index="${moveHistory.O[0]}"]`)?.classList.add('fading');
-    }
-}
-
-function rotateBoard() {
-    if (!gameActive) return;
-    const size = 4;
-    const newBoard = new Array(16).fill("");
-    const boardElement = document.getElementById('board');
-
-    // Add visual rotation effect
-    boardElement.classList.add('rotating');
-
-    // Calculate new positions (r, c) -> (c, 3-r)
-    for (let i = 0; i < 16; i++) {
-        const r = Math.floor(i / size);
-        const c = i % size;
-        const newR = c;
-        const newC = 3 - r;
-        const newIdx = newR * size + newC;
-        newBoard[newIdx] = boardState[i];
-    }
-
-    boardState = newBoard;
-
-    // Update UI after animation delay
-    setTimeout(() => {
-        boardElement.classList.remove('rotating');
-        const cells = document.querySelectorAll('.cell');
-        cells.forEach((cell, idx) => {
-            const state = boardState[idx];
-            cell.innerText = state;
-            cell.className = state === "" ? "cell" : `cell taken ${state.toLowerCase()}`;
-            // Preserve fading for LV 2 if somehow relevant, but mainly for current state
-        });
-
-        // Re-check win after rotation
-        if (checkWin()) {
-            const winnerName = currentPlayer === 'X' ? '당신이' : '컴퓨터가';
-            document.getElementById('gameStatus').innerText = `✨ 회전 후 ${winnerName} 승리!`;
-            gameActive = false;
-        }
-    }, 500);
-}
-
-// --- Memory Game Logic ---
-let memoryCards = [];
-let flippedCards = [];
-let matchedCount = 0;
-const emojis = ["🍎", "🍐", "🍋", "🍌", "🍉", "🍇", "🍓", "🫐"];
-
-function initMemoryGame() {
-    const board = document.getElementById('memoryBoard');
-    board.innerHTML = "";
-    memoryCards = [...emojis, ...emojis].sort(() => Math.random() - 0.5);
-    flippedCards = [];
-    matchedCount = 0;
-
-    memoryCards.forEach((emoji, index) => {
-        const card = document.createElement('div');
-        card.className = "memory-card";
-        card.dataset.index = index;
-        card.dataset.emoji = emoji;
-        card.innerText = "?";
-        card.addEventListener('click', flipMemoryCard);
-        board.appendChild(card);
-    });
-}
-
-function flipMemoryCard() {
-    if (flippedCards.length === 2 || this.classList.contains('flipped')) return;
-
-    this.innerText = this.dataset.emoji;
-    this.classList.add('flipped');
-    flippedCards.push(this);
-
-    if (flippedCards.length === 2) {
-        if (flippedCards[0].dataset.emoji === flippedCards[1].dataset.emoji) {
-            matchedCount++;
-            flippedCards = [];
-            if (matchedCount === emojis.length) {
-                setTimeout(() => alert("축하합니다! 모든 카드를 맞추셨습니다."), 300);
-            }
-        } else {
-            setTimeout(() => {
-                flippedCards.forEach(c => {
-                    c.innerText = "?";
-                    c.classList.remove('flipped');
-                });
-                flippedCards = [];
-            }, 800);
-        }
-    }
-}
-
-// --- Clicker (Idle) Game Logic ---
-let seconds = 0;
-let autoSecondsPerSecond = 0;
-const upgradeCosts = {
-    auto1: 15,
-    auto10: 100
-};
-const upgradeOwned = {
-    auto1: 0,
-    auto10: 0
-};
-
+// --- Clicker Game Logic ---
 function updateClickerUI() {
-    const scoreEl = document.getElementById('timeScore');
-    const autoEl = document.getElementById('autoRate');
-    if (scoreEl) scoreEl.innerText = Math.floor(seconds).toLocaleString();
-    if (autoEl) autoEl.innerText = autoSecondsPerSecond.toLocaleString();
+    document.getElementById('timeScore').innerText = Math.floor(seconds).toLocaleString();
+    document.getElementById('autoRate').innerText = (autoSecondsPerSecond * multiplier).toLocaleString();
+    document.getElementById('multiplier').innerText = multiplier.toLocaleString();
+    document.getElementById('rebirthCount').innerText = rebirthCount;
 
-    // Save to LocalStorage
-    localStorage.setItem('clicker_data', JSON.stringify({
-        seconds: seconds,
-        autoRate: autoSecondsPerSecond,
-        owned: upgradeOwned,
-        costs: upgradeCosts
-    }));
+    const rebirthBtn = document.getElementById('rebirthBtn');
+    if (rebirthBtn) {
+        rebirthBtn.disabled = seconds < rebirthThreshold;
+        rebirthBtn.innerText = seconds < rebirthThreshold ? `환생하기 (보너스 +1x)` : "환생 가능! 클릭하세요";
+    }
 
-    // Update shop buttons
     for (const id in upgradeCosts) {
-        const btn = document.getElementById(`buy-${id}`);
-        if (btn) {
-            btn.disabled = seconds < upgradeCosts[id];
-            btn.innerText = `구매 (${upgradeCosts[id]}초) - 보유: ${upgradeOwned[id]}`;
+        const costEl = document.getElementById(`cost-${id}`);
+        const itemEl = document.getElementById(`buy-${id}`);
+        if (costEl) costEl.innerText = `${upgradeCosts[id].toLocaleString()}s`;
+        if (itemEl) {
+            itemEl.classList.toggle('disabled', seconds < upgradeCosts[id]);
         }
     }
+
+    // Save state
+    localStorage.setItem('clicker_v2', JSON.stringify({
+        seconds, autoRate: autoSecondsPerSecond, multiplier, rebirthCount, upgradeCosts, upgradeOwned
+    }));
 }
 
 function buyUpgrade(id) {
     if (seconds >= upgradeCosts[id]) {
         seconds -= upgradeCosts[id];
         upgradeOwned[id]++;
-
-        if (id === 'auto1') autoSecondsPerSecond += 1;
-        if (id === 'auto10') autoSecondsPerSecond += 10;
-
-        // Increase cost (exponential growth)
-        upgradeCosts[id] = Math.floor(upgradeCosts[id] * 1.25);
-
+        const bonus = id === 'auto1' ? 1 : (id === 'auto10' ? 10 : 100);
+        autoSecondsPerSecond += bonus;
+        upgradeCosts[id] = Math.floor(upgradeCosts[id] * 1.3);
         updateClickerUI();
     }
 }
 
-function startIdleTimer() {
-    setInterval(() => {
-        if (autoSecondsPerSecond > 0) {
-            seconds += autoSecondsPerSecond / 10; // Update every 100ms
-            updateClickerUI();
-        }
-    }, 100);
+function handleRebirth() {
+    if (seconds >= rebirthThreshold) {
+        rebirthCount++;
+        multiplier += 1;
+        seconds = 0;
+        autoSecondsPerSecond = 0;
+        upgradeCosts = { auto1: 15, auto10: 100, auto100: 1000 };
+        upgradeOwned = { auto1: 0, auto10: 0, auto100: 0 };
+        updateClickerUI();
+        alert(`축하합니다! ${rebirthCount}번째 환생에 성공하여 영구 배율이 x${multiplier}가 되었습니다.`);
+    }
 }
 
-// Initial binding
+function createParticle(x, y) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.innerText = `+${multiplier}`;
+    const tx = (Math.random() - 0.5) * 100;
+    const ty = -100 - Math.random() * 50;
+    p.style.setProperty('--tx', `${tx}px`);
+    p.style.setProperty('--ty', `${ty}px`);
+    p.style.left = `${x}px`;
+    p.style.top = `${y}px`;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 800);
+}
+
+// --- Initialize ---
 document.addEventListener('DOMContentLoaded', () => {
-    // Set default tab
     switchTab('daily');
 
-    // Initial Daily Fun Data
+    // Restore state
+    const saved = localStorage.getItem('clicker_v2');
+    if (saved) {
+        const d = JSON.parse(saved);
+        seconds = d.seconds || 0;
+        autoSecondsPerSecond = d.autoRate || 0;
+        multiplier = d.multiplier || 1;
+        rebirthCount = d.rebirthCount || 0;
+        Object.assign(upgradeCosts, d.upgradeCosts || {});
+        Object.assign(upgradeOwned, d.upgradeOwned || {});
+    }
+
+    document.getElementById('clickBtn').addEventListener('click', (e) => {
+        seconds += 1 * multiplier;
+        createParticle(e.clientX, e.clientY);
+        updateClickerUI();
+    });
+
+    setInterval(() => {
+        seconds += (autoSecondsPerSecond * multiplier) / 10;
+        updateClickerUI();
+        renderClock();
+    }, 100);
+
+    // Initial API calls
     fetchTrivia();
     fetchFact();
     fetchDailyHistory();
-
-    // Restore Clicker Data
-    const savedClicker = localStorage.getItem('clicker_data');
-    if (savedClicker) {
-        const data = JSON.parse(savedClicker);
-        seconds = data.seconds || 0;
-        autoSecondsPerSecond = data.autoRate || 0;
-        Object.assign(upgradeOwned, data.owned || {});
-        Object.assign(upgradeCosts, data.costs || {});
-        updateClickerUI();
-    }
-
-    // Clicker Game Binding
-    const clickBtn = document.getElementById('clickBtn');
-    if (clickBtn) {
-        clickBtn.addEventListener('click', () => {
-            seconds += 1;
-            updateClickerUI();
-        });
-    }
-    startIdleTimer();
-
     loadGameRecords();
-    resetGame(true); // Call once to setup LV 1
+    resetGame(true);
 });
+
+// --- API Helpers (Reuse or Refine) ---
+async function fetchTrivia() {
+    const content = document.getElementById('triviaContent');
+    content.innerText = "가져오는 중...";
+    try {
+        const res = await fetch('https://opentdb.com/api.php?amount=1&type=multiple');
+        const data = await res.json();
+        const item = data.results[0];
+        const q = decodeHtml(item.question);
+        const a = decodeHtml(item.correct_answer);
+        content.innerHTML = `<p>${q}</p><div class='answer' style='opacity:0; transition:0.3s' onmouseover='this.style.opacity=1'>정답: ${a}</div>`;
+    } catch { content.innerText = "퀴즈를 가져오지 못했습니다."; }
+}
+
+async function fetchFact() {
+    const content = document.getElementById('factContent');
+    try {
+        const res = await fetch('https://uselessfacts.jsph.pl/random.json?language=en');
+        const data = await res.json();
+        content.innerText = data.text;
+    } catch { content.innerText = "상식을 가져오지 못했습니다."; }
+}
+
+async function fetchDailyHistory() {
+    const list = document.getElementById('dailyHistoryContent');
+    const today = new Date();
+    const mm = today.getMonth() + 1;
+    const dd = today.getDate();
+    try {
+        const res = await fetch(`https://ko.wikipedia.org/w/api.php?action=parse&origin=*&format=json&page=${mm}월_${dd}일&prop=text&section=1`);
+        const data = await res.json();
+        const html = data.parse.text["*"];
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const items = Array.from(doc.querySelectorAll('li')).slice(0, 3);
+        list.innerHTML = items.map(li => `<p>• ${li.innerText.split('[')[0]}</p>`).join('');
+    } catch { list.innerText = "역사를 가져오지 못했습니다."; }
+}
+
+function revealFortune() {
+    const fortunes = [
+        "오늘은 뜻밖의 행운이 찾아올 것입니다. 🍀",
+        "서두르지 마세요. 시간은 당신의 편입니다. ⏳",
+        "작은 노력이 큰 결실로 돌아오는 날입니다. 🌱",
+        "주변 사람들에게 미소를 전해보세요. 복이 옵니다. 😊",
+        "새로운 도전을 시작하기에 아주 좋은 타이밍입니다! 🚀"
+    ];
+    document.getElementById('fortuneContent').innerText = fortunes[Math.floor(Math.random() * fortunes.length)];
+}
+
+function decodeHtml(html) {
+    var txt = document.createElement("textarea");
+    txt.innerHTML = html;
+    return txt.value;
+}
+
+// --- TicTacToe Logic (Existing but updated for UI) ---
+let board = Array(9).fill("");
+let currentPlayer = "X";
+let gameActive = true;
+let level = 1;
+
+function resetGame(initial = false) {
+    board = Array(9).fill("");
+    currentPlayer = "X";
+    gameActive = true;
+    if (!initial) level = 1;
+    renderBoard();
+    updateTictactoeUI();
+}
+
+function renderBoard() {
+    const boardEl = document.getElementById('board');
+    if (!boardEl) return;
+    boardEl.innerHTML = "";
+    board.forEach((cell, i) => {
+        const div = document.createElement('div');
+        div.className = `cell ${cell.toLowerCase()}`;
+        div.innerText = cell;
+        div.addEventListener('click', () => handleMove(i));
+        boardEl.appendChild(div);
+    });
+}
+
+function handleMove(i) {
+    if (board[i] !== "" || !gameActive || currentPlayer !== "X") return;
+    board[i] = "X";
+    renderBoard();
+    if (!checkGameOver()) {
+        currentPlayer = "O";
+        setTimeout(computerMove, 500);
+    }
+}
+
+function computerMove() {
+    if (!gameActive) return;
+    let available = board.map((v, i) => v === "" ? i : null).filter(v => v !== null);
+    if (available.length > 0) {
+        let move = available[Math.floor(Math.random() * available.length)];
+        board[move] = "O";
+        renderBoard();
+        checkGameOver();
+        currentPlayer = "X";
+    }
+}
+
+function checkGameOver() {
+    const winPatterns = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]];
+    for (const p of winPatterns) {
+        if (board[p[0]] !== "" && board[p[0]] === board[p[1]] && board[p[1]] === board[p[2]]) {
+            alert(board[p[0]] === "X" ? "Win!" : "Lose!");
+            incrementRecord(level, board[p[0]] === "X" ? 'win' : 'failure');
+            gameActive = false;
+            return true;
+        }
+    }
+    if (!board.includes("")) {
+        alert("Draw!");
+        gameActive = false;
+        return true;
+    }
+    return false;
+}
+
+function updateTictactoeUI() {
+    document.getElementById('levelBadge').innerText = `LV ${level}`;
+}
+
+// --- Memory Game ---
+let memoryCards = [];
+let flipped = [];
+let matched = 0;
+const emojis = ["🍎", "🍐", "🍋", "🍌", "🍉", "🍇", "🍓", "🫐"];
+
+function initMemoryGame() {
+    const boardEl = document.getElementById('memoryBoard');
+    boardEl.innerHTML = "";
+    memoryCards = [...emojis, ...emojis].sort(() => Math.random() - 0.5);
+    matched = 0;
+    flipped = [];
+    memoryCards.forEach((emoji, i) => {
+        const card = document.createElement('div');
+        card.className = "memory-card";
+        card.dataset.emoji = emoji;
+        card.dataset.index = i;
+        card.innerText = "?";
+        card.addEventListener('click', flipCard);
+        boardEl.appendChild(card);
+    });
+}
+
+function flipCard() {
+    if (flipped.length === 2 || this.classList.contains('flipped')) return;
+    this.innerText = this.dataset.emoji;
+    this.classList.add('flipped');
+    flipped.push(this);
+    if (flipped.length === 2) {
+        if (flipped[0].dataset.emoji === flipped[1].dataset.emoji) {
+            matched++;
+            flipped = [];
+            if (matched === emojis.length) alert("Memory Clear!");
+        } else {
+            setTimeout(() => {
+                flipped.forEach(c => { c.innerText = "?"; c.classList.remove('flipped'); });
+                flipped = [];
+            }, 500);
+        }
+    }
+}
+
+// --- Records Storage ---
+let clearRecords = { wins: {}, failures: {} };
+async function loadGameRecords() {
+    const localData = localStorage.getItem('game_records');
+    if (localData) {
+        clearRecords = JSON.parse(localData);
+    }
+    updateRecordsUI();
+}
+
+function incrementRecord(level, type) {
+    const key = type === 'win' ? 'wins' : 'failures';
+    clearRecords[key][level] = (clearRecords[key][level] || 0) + 1;
+    localStorage.setItem('game_records', JSON.stringify(clearRecords));
+    updateRecordsUI();
+}
+
+function updateRecordsUI() {
+    const list = document.getElementById('recordsList');
+    if (!list) return;
+    let html = "";
+    for (let i = 1; i <= 7; i++) {
+        html += `<div class='record-item'><span>LV ${i}</span><span>W: ${clearRecords.wins[i] || 0} / L: ${clearRecords.failures[i] || 0}</span></div>`;
+    }
+    list.innerHTML = html;
+}
+
+// --- Birth Discovery Core Logic ---
+async function discover() {
+    const dateInput = document.getElementById('birthDate');
+    if (!dateInput.value) {
+        alert("생년월일을 선택해주세요!");
+        return;
+    }
+
+    document.getElementById('resultSection').classList.add('active');
+    const birthDate = new Date(dateInput.value);
+    const month = birthDate.getMonth() + 1;
+    const day = birthDate.getDate();
+    const year = birthDate.getFullYear();
+
+    // 1. Western Zodiac
+    const zodiacs = [
+        { name: "염소자리", start: [1, 1], end: [1, 19] },
+        { name: "물병자리", start: [1, 20], end: [2, 18] },
+        { name: "물고기자리", start: [2, 19], end: [3, 20] },
+        { name: "양자리", start: [3, 21], end: [4, 19] },
+        { name: "황소자리", start: [4, 20], end: [5, 20] },
+        { name: "쌍둥이자리", start: [5, 21], end: [6, 21] },
+        { name: "게자리", start: [6, 22], end: [7, 22] },
+        { name: "사자자리", start: [7, 23], end: [8, 22] },
+        { name: "처녀자리", start: [8, 23], end: [9, 23] },
+        { name: "천칭자리", start: [9, 24], end: [10, 22] },
+        { name: "전갈자리", start: [10, 23], end: [11, 22] },
+        { name: "사수자리", start: [11, 23], end: [12, 24] },
+        { name: "염소자리", start: [12, 25], end: [12, 31] }
+    ];
+    const zodiac = zodiacs.find(z => {
+        const [m1, d1] = z.start;
+        const [m2, d2] = z.end;
+        const current = month * 100 + day;
+        return current >= (m1 * 100 + d1) && current <= (m2 * 100 + d2);
+    }) || zodiacs[0];
+
+    // 2. Chinese Zodiac & Element (Simplified)
+    const animals = ["원숭이", "닭", "개", "돼지", "쥐", "소", "호랑이", "토끼", "용", "뱀", "말", "양"];
+    const elements = ["금", "금", "토", "수", "수", "토", "목", "목", "토", "화", "화", "토"];
+    const animal = animals[year % 12];
+    const element = elements[year % 12];
+
+    document.getElementById('zodiacName').innerText = `${zodiac.name} (${animal}띠)`;
+    document.getElementById('zodiacDetails').innerText = `${year}년은 ${element}의 기운이 깃든 ${animal}의 해입니다.`;
+
+    // 3. Birthstone & Flower (Mock data for variety)
+    const stones = ["가넷", "자수정", "아쿠아마린", "다이아몬드", "에메랄드", "진주", "루비", "페리도트", "사파이어", "오팔", "토파즈", "터키석"];
+    const flowers = ["수선화", "제비꽃", "데이지", "스위트피", "은방울꽃", "장미", "백합", "글라디올러스", "과꽃", "금잔화", "국화", "포인세티아"];
+    document.getElementById('birthStone').innerText = stones[month - 1];
+    document.getElementById('birthFlower').innerText = flowers[month - 1];
+    document.getElementById('flowerMeaning').innerText = "변치 않는 사랑과 행복한 미래";
+
+    // 4. Wikipedia Events
+    const eventList = document.getElementById('eventList');
+    eventList.innerHTML = "<h3>그날의 흔적 (역사적 사건)</h3><p>가져오는 중...</p>";
+    try {
+        const res = await fetch(`https://ko.wikipedia.org/w/api.php?action=parse&origin=*&format=json&page=${month}월_${day}일&prop=text&section=1`);
+        const data = await res.json();
+        const html = data.parse.text["*"];
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const items = Array.from(doc.querySelectorAll('li')).slice(0, 5);
+        eventList.innerHTML = "<h3>그날의 흔적 (역사적 사건)</h3>" + items.map(li => `<p>• ${li.innerText.split('[')[0]}</p>`).join('');
+    } catch {
+        eventList.innerHTML = "<h3>그날의 흔적</h3><p>정보를 불러오지 못했습니다.</p>";
+    }
+
+    // 5. Build Stats Grid
+    const statsGrid = document.getElementById('statsGrid');
+    const globalBirths = 385000; // Approx daily births globally
+    const koreaBirths = 700; // Approx daily births in Korea (current trend)
+    statsGrid.innerHTML = `
+        <div class="stat-item"><span class="stat-num">${koreaBirths.toLocaleString()}명</span><span class="stat-label">한국 동기</span></div>
+        <div class="stat-item"><span class="stat-num">${globalBirths.toLocaleString()}명</span><span class="stat-label">지구촌 동기</span></div>
+        <div class="stat-item"><span class="stat-num">약 48%</span><span class="stat-label">행운 지수</span></div>
+    `;
+
+    // AI Prompt
+    const promptText = `A mystical digital art of a ${animal} guardian with ${element} essence, star constellations of ${zodiac.name} in the background, neon glow, 8k resolution, cinematic lighting.`;
+    const promptContainer = document.querySelector('.prompt-container');
+    if (promptContainer) {
+        document.getElementById('aiPromptText').innerText = promptText;
+    }
+}
+
+function copyPrompt() {
+    const text = document.getElementById('aiPromptText').innerText;
+    navigator.clipboard.writeText(text).then(() => alert("프롬프트가 복사되었습니다!"));
+}
