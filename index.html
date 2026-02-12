@@ -30,7 +30,7 @@
                     <option value="pathfinding" data-i18n="tab_pathfinding">Pathfinding</option>
                     <option value="gameoflife" data-i18n="tab_gameoflife">Game of Life</option>
                     <option value="tsp" data-i18n="tab_tsp">TSP</option>
-                    <option value="huffman" data-i18n="tab_huffman">Huffman</option>
+                    <option value="pixel" data-i18n="tab_pixel">Pixel Master</option>
                 </select>
 
                 <select id="langSelect" style="margin-left: 10px; padding: 4px; border-radius: 4px;">
@@ -138,10 +138,12 @@
                     <button id="btnTspNew" class="btn secondary">New Cities</button>
                 </div>
 
-                <!-- Huffman Controls -->
-                <div id="controls_huffman" class="module-controls hidden">
-                    <button id="btnHuffmanGen" class="btn secondary">Generate</button>
-                    <button id="btnHuffmanRun" class="btn primary">Run</button>
+                <!-- Pixel Master Controls -->
+                <div id="controls_pixel" class="module-controls hidden">
+                    <input type="color" id="pixelColor" value="#f43f5e" style="height: 38px; cursor: pointer;">
+                    <label for="pixelUpload" id="lblPixelUpload" class="btn secondary">Upload Image</label>
+                    <input type="file" id="pixelUpload" class="hidden" accept="image/*">
+                    <button id="btnPixelReset" class="btn tertiary">Reset</button>
                 </div>
             </div>
         </header>
@@ -194,8 +196,8 @@
                 <!-- TSP Canvas -->
                 <canvas id="tspCanvas" class="hidden"></canvas>
 
-                <!-- Huffman Canvas -->
-                <canvas id="huffmanCanvas" class="hidden"></canvas>
+                <!-- Pixel Canvas -->
+                <canvas id="pixelCanvas" class="hidden"></canvas>
             </section>
         </main>
 

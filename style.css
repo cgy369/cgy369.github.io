@@ -302,9 +302,10 @@ button:disabled {
     animation: pop 0.2s ease-out;
 }
 
-/* TSP & Huffman Canvas */
+/* TSP, Huffman (Removed), Pixel Canvas */
 #tspCanvas,
-#huffmanCanvas {
+#huffmanCanvas,
+#pixelCanvas {
     background-color: #111;
     border: 1px solid #333;
     align-self: center;
