@@ -382,49 +382,58 @@ function resizeCanvas() {
 }
 
 // --- Module Switching (Select Box) ---
-// Clean up overlays and previous module artifacts
-if (typeof gameOverlay !== 'undefined') gameOverlay.classList.add('hidden');
+function switchModule(modName) {
+    if (APP.isRunning || APP.golRunning) handleStop();
 
-elViz.classList.add('hidden');
-elGrid.classList.add('hidden');
-elCanvas.classList.add('hidden');
-elPixelCanvas.classList.add('hidden');
-elEditor.parentElement.style.display = 'flex';
+    // Hide ALL visualizers first
+    [elViz, elGrid, elCanvas, elPixelCanvas].forEach(el => el.classList.add('hidden'));
 
-removeGridListeners();
-btnStop.disabled = true;
+    // Update active module
+    APP.module = modName;
 
-if (modName === 'sorting') {
-    elViz.classList.remove('hidden');
-    elEditor.value = SORT_PRESETS[algoSelect.value];
-    if (APP.sortMode === 'game') gameOverlay.classList.remove('hidden');
-} else if (modName === 'tsp') {
-    elCanvas.classList.remove('hidden');
-    elEditor.parentElement.style.display = 'none';
-    resizeCanvas();
-    generateTSP();
-} else if (modName === 'pixel') {
-    elPixelCanvas.classList.remove('hidden');
-    elEditor.parentElement.style.display = 'none';
-} else {
-    // Grid-based modules (Maze, Pathfinding, GoL)
-    elGrid.classList.remove('hidden');
-    elGrid.className = '';
+    // Show appropriate controls
+    Object.keys(controls).forEach(key => {
+        if (key === modName) controls[key].classList.remove('hidden');
+        else controls[key].classList.add('hidden');
+    });
 
-    if (modName === 'pathfinding') {
-        elEditor.value = PF_PRESETS.astar;
-        addPathfindingListeners();
-        updatePathfindingNodes();
-    } else if (modName === 'maze') {
+    // Clean up overlays
+    if (typeof gameOverlay !== 'undefined') gameOverlay.classList.add('hidden');
+
+    elEditor.parentElement.style.display = 'flex';
+    removeGridListeners();
+    btnStop.disabled = true;
+
+    if (modName === 'sorting') {
+        elViz.classList.remove('hidden');
+        elEditor.value = SORT_PRESETS[algoSelect.value];
+        if (APP.sortMode === 'game') gameOverlay.classList.remove('hidden');
+    } else if (modName === 'tsp') {
+        elCanvas.classList.remove('hidden');
         elEditor.parentElement.style.display = 'none';
-        // Do NOT re-generate grid to preserve existing maze if switching from PF
-    } else if (modName === 'gameoflife') {
+        resizeCanvas();
+        generateTSP();
+    } else if (modName === 'pixel') {
+        elPixelCanvas.classList.remove('hidden');
         elEditor.parentElement.style.display = 'none';
-        generateGrid(CONFIG.gridSize);
-        addGoLListeners();
+    } else {
+        // Grid-based modules
+        elGrid.classList.remove('hidden');
+
+        if (modName === 'pathfinding') {
+            elEditor.value = PF_PRESETS.astar;
+            addPathfindingListeners();
+            updatePathfindingNodes();
+        } else if (modName === 'maze') {
+            elEditor.parentElement.style.display = 'none';
+            // Grid remains as-is to preserve Maze -> PF flow
+        } else if (modName === 'gameoflife') {
+            elEditor.parentElement.style.display = 'none';
+            generateGrid(CONFIG.gridSize);
+            addGoLListeners();
+        }
     }
-}
-updateText();
+    updateText();
 }
 
 moduleSelect.addEventListener('change', (e) => switchModule(e.target.value));
@@ -652,11 +661,13 @@ function drawTSP(currentLine = null) {
     }
 }
 
-async function solveTSP() {
+const distPoints = (p1, p2) => Math.hypot(p1.x - p2.x, p1.y - p2.y);
+
+async function solveTSPAsync() {
     if (APP.isRunning) return;
     APP.isRunning = true; APP.shouldStop = false;
     btnStop.disabled = false;
-    setStatus('Selling...');
+    setStatus(t('status_running'));
 
     const visited = new Set([0]);
     let path = [0];
@@ -671,7 +682,7 @@ async function solveTSP() {
             if (!visited.has(i)) {
                 drawTSP({ p1: APP.tspCities[curr], p2: APP.tspCities[i] });
                 await sleep(APP.delayMs);
-                const d = dist(APP.tspCities[curr], APP.tspCities[i]);
+                const d = distPoints(APP.tspCities[curr], APP.tspCities[i]);
                 if (d < minDist) { minDist = d; nearest = i; }
             }
         }
@@ -686,8 +697,9 @@ async function solveTSP() {
     drawTSP();
     APP.isRunning = false;
     btnStop.disabled = true;
+    setStatus(t('status_finished'));
 }
-function solveTSP() { solveTSPAsync(); } // Simple wrapper for existing code structure
+function solveTSP() { solveTSPAsync(); }
 
 // --- GRID MODULES SETUP ---
 function generateGrid(size = CONFIG.gridSize) {
