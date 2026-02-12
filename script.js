@@ -90,13 +90,16 @@ const TRANSLATIONS = {
 const SORT_PRESETS = {
     bubble: `// Bubble Sort
 for (let i = 0; i < data.length; i++) {
+    let swapped = false;
     for (let j = 0; j < data.length - i - 1; j++) {
         renderArray([j, j+1], CONFIG.colors.compare);
         await sleep(APP.delayMs);
         if (data[j] > data[j + 1]) {
             await swap(j, j + 1);
+            swapped = true;
         }
     }
+    if (!swapped) break;
 }`,
     selection: `// Selection Sort
 for (let i = 0; i < data.length; i++) {
@@ -259,6 +262,7 @@ const APP = {
     // Sorting
     sortMode: 'code',
     sortData: [],
+    gameResolvers: null,
     isImageMode: false,
     imgSrc: 'https://picsum.photos/800/600',
 
@@ -311,6 +315,18 @@ const imgUpload = document.getElementById('imgUpload');
 const lblImgUpload = document.getElementById('lblImgUpload');
 const sizeRange = document.getElementById('sizeRange');
 const speedRange = document.getElementById('speedRange');
+
+// Mode & Game UI
+const modeRadios = document.getElementsByName('appMode');
+const gameOverlay = document.getElementById('gameOverlay');
+const gameControls = document.getElementById('gameControls');
+const stepDesc = document.getElementById('stepDesc');
+const btnAction1 = document.getElementById('btnAction1'); // Swap / Yes
+const btnAction2 = document.getElementById('btnAction2'); // Pass / No
+const feedbackMsg = document.getElementById('feedbackMsg');
+const gameInstruction = document.getElementById('gameInstruction');
+const editorTitle = document.getElementById('editorTitle');
+const editorSub = document.getElementById('editorSub');
 
 // Maze DOM
 const btnMazeGen = document.getElementById('btnMazeGen');
@@ -409,7 +425,7 @@ langSelect.addEventListener('change', (e) => { APP.lang = e.target.value; update
 // --- SORTING MODULE ---
 function generateArray() {
     APP.sortData = [];
-    const size = parseInt(sizeRange.value);
+    const size = APP.sortMode === 'game' ? 10 : parseInt(sizeRange.value);
     if (APP.isImageMode) {
         for (let i = 0; i < size; i++) APP.sortData.push(i);
         for (let i = size - 1; i > 0; i--) {
@@ -440,6 +456,14 @@ function renderArray(activeIndices = [], color = null) {
         } else {
             bar.style.width = `${100 / n}%`;
             bar.style.height = `${val}%`;
+            if (APP.sortMode === 'game') {
+                bar.textContent = val;
+                bar.style.color = '#fff';
+                bar.style.fontSize = '10px';
+                bar.style.display = 'flex';
+                bar.style.alignItems = 'flex-end';
+                bar.style.justifyContent = 'center';
+            }
             if (activeIndices.includes(idx)) {
                 bar.classList.add('active');
                 if (color) bar.style.backgroundColor = color;
@@ -458,9 +482,96 @@ async function swap(i, j) {
     await sleep(APP.delayMs);
 }
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function sleep(ms) {
+    if (APP.shouldStop) throw new Error('Stopped by user');
+    return new Promise(r => setTimeout(r, ms));
+}
 sizeRange.addEventListener('input', generateArray);
 speedRange.addEventListener('input', (e) => APP.delayMs = 200 - (e.target.value * 1.9));
+
+// --- INTERACTIVE MODE LOGIC ---
+
+function waitForDecision(prompt, btn1Text, btn2Text, validator) {
+    return new Promise((resolve, reject) => {
+        if (APP.shouldStop) { reject(new Error('Stopped by user')); return; }
+        stepDesc.innerHTML = prompt;
+        btnAction1.textContent = btn1Text; btnAction2.textContent = btn2Text;
+        feedbackMsg.textContent = ''; feedbackMsg.className = 'feedback';
+        gameControls.classList.remove('hidden');
+        APP.gameResolvers = { resolve, validator };
+    });
+}
+
+async function handleGameDecision(choiceIdx) {
+    if (!APP.gameResolvers) return;
+    const { resolve, validator } = APP.gameResolvers;
+    const result = validator(choiceIdx);
+    if (result.correct) {
+        feedbackMsg.textContent = t('msg_correct') + " " + (result.message || "");
+        feedbackMsg.className = 'feedback correct';
+        APP.gameResolvers = null;
+        if (result.action) await result.action();
+        await sleep(300);
+        gameControls.classList.add('hidden');
+        resolve(true);
+    } else {
+        feedbackMsg.textContent = t('msg_wrong') + " " + (result.message || "");
+        feedbackMsg.className = 'feedback wrong';
+        setTimeout(() => feedbackMsg.classList.remove('wrong'), 500);
+    }
+}
+
+async function interactiveBubbleSort() {
+    for (let i = 0; i < APP.sortData.length; i++) {
+        for (let j = 0; j < APP.sortData.length - i - 1; j++) {
+            renderArray([j, j + 1], CONFIG.colors.compare);
+            const valA = APP.sortData[j], valB = APP.sortData[j + 1];
+            const shouldSwap = valA > valB;
+            await waitForDecision(t('prompt_bubble').replace('{0}', valA).replace('{1}', valB), t('game_swap'), t('game_pass'), (choice) => {
+                if (choice === 1 && shouldSwap) return { correct: true, action: async () => await swap(j, j + 1) };
+                if (choice === 2 && !shouldSwap) return { correct: true };
+                return { correct: false, message: shouldSwap ? t('game_yes') : t('game_no') };
+            });
+        }
+    }
+}
+
+async function interactiveSelectionSort() {
+    for (let i = 0; i < APP.sortData.length; i++) {
+        let minIdx = i;
+        for (let j = i + 1; j < APP.sortData.length; j++) {
+            renderArray([minIdx, j], CONFIG.colors.compare);
+            const currentMin = APP.sortData[minIdx], compareVal = APP.sortData[j];
+            const isSmaller = compareVal < currentMin;
+            await waitForDecision(t('prompt_selection'), t('game_yes'), t('game_no'), (choice) => {
+                if (choice === 1 && isSmaller) { minIdx = j; return { correct: true }; }
+                if (choice === 2 && !isSmaller) return { correct: true };
+                return { correct: false };
+            });
+        }
+        if (minIdx !== i) await swap(i, minIdx);
+    }
+}
+
+async function runGame() {
+    const algo = algoSelect.value;
+    gameInstruction.classList.add('hidden');
+    try {
+        if (algo === 'bubble') await interactiveBubbleSort();
+        else if (algo === 'selection') await interactiveSelectionSort();
+        else {
+            alert("This algorithm is not yet supported in Game Mode. Switching to Bubble Sort!");
+            await interactiveBubbleSort();
+        }
+        renderArray([], CONFIG.colors.sorted);
+        setStatus(t('status_finished'));
+    } catch (e) {
+        if (e.message !== 'Stopped by user') console.error(e);
+    } finally {
+        gameControls.classList.add('hidden');
+        gameInstruction.classList.remove('hidden');
+    }
+}
 
 // --- COMMON STOP HANDLER ---
 function handleStop() {
@@ -715,16 +826,30 @@ function updateEndNode(r, c) {
 function setStatus(msg) { elStatus.textContent = msg; }
 
 // --- Buttons ---
-btnRun.addEventListener('click', () => {
+btnRun.addEventListener('click', async () => {
+    if (APP.isRunning) return;
     const code = elEditor.value;
-    const userFunc = new Function('data', 'swap', 'renderArray', 'CONFIG', 'APP', `return (async () => { ${code} })()`);
-    APP.isRunning = true; APP.shouldStop = false;
-    btnStop.disabled = false;
-    userFunc(APP.sortData, swap, renderArray, CONFIG, APP).then(() => {
-        APP.isRunning = false;
+    const userFunc = new Function('data', 'swap', 'renderArray', 'CONFIG', 'APP', 'sleep', `return (async () => { ${code} })()`);
+
+    try {
+        APP.isRunning = true; APP.shouldStop = false;
+        btnStop.disabled = false;
+        if (APP.sortMode === 'game') {
+            await runGame();
+        } else {
+            await userFunc(APP.sortData, swap, renderArray, CONFIG, APP, sleep);
+        }
         setStatus(t('status_finished'));
+    } catch (e) {
+        if (e.message === 'Stopped by user') {
+            setStatus(t('status_stopped'));
+        } else {
+            console.error("Sort Error:", e);
+        }
+    } finally {
+        APP.isRunning = false;
         btnStop.disabled = true;
-    });
+    }
 });
 btnMazeGen.addEventListener('click', generateMaze);
 btnGolStart.addEventListener('click', runGameOfLife);
@@ -825,6 +950,28 @@ btnPfRun.addEventListener('click', async () => {
 btnStop.addEventListener('click', handleStop);
 
 // Sorting Mode Listeners
+modeRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+        APP.sortMode = e.target.value;
+        handleStop();
+        if (APP.sortMode === 'game') {
+            editorTitle.textContent = t('game_title');
+            editorSub.textContent = t('game_instruction');
+            elEditor.classList.add('hidden');
+            gameOverlay.classList.remove('hidden');
+        } else {
+            editorTitle.textContent = "JavaScript Editor";
+            editorSub.innerHTML = "Available: <code>data[]</code>, <code>await swap(i,j)</code>";
+            elEditor.classList.remove('hidden');
+            gameOverlay.classList.add('hidden');
+        }
+        generateArray();
+    });
+});
+
+btnAction1.addEventListener('click', () => handleGameDecision(1));
+btnAction2.addEventListener('click', () => handleGameDecision(2));
+
 imgModeCheck.addEventListener('change', (e) => {
     APP.isImageMode = e.target.checked;
     lblImgUpload.style.display = APP.isImageMode ? 'inline-block' : 'none';
