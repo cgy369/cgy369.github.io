@@ -192,20 +192,28 @@ button:disabled {
 
 /* Footer / Ad */
 .ad-footer {
-    height: 90px;
+    height: 100px;
+    /* Fixed height */
+    flex: 0 0 100px;
+    /* Do not grow, Do not shrink, Fixed basis */
     background-color: var(--bg-panel);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     justify-content: center;
     align-items: center;
+    z-index: 50;
+    overflow: hidden;
 }
 
 .ad-container {
     width: 100%;
     max-width: 728px;
     height: 90px;
-    /* AdSense Leaderboard height */
+    display: flex;
+    justify-content: center;
+    align-items: center;
     overflow: hidden;
+    /* Cut off anything extra */
 }
 
 /* --- Interactive Mode Styles --- */
