@@ -131,6 +131,27 @@ button {
     transition: all 0.2s;
 }
 
+/* Dropdown Menu Styling */
+select {
+    background-color: var(--bg-panel);
+    /* Ensure solid background for options */
+}
+
+select option {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    padding: 10px;
+    /* Note: limited support in some browsers */
+}
+
+select optgroup {
+    background-color: var(--bg-panel);
+    color: var(--accent);
+    /* Make group labels distinct */
+    font-weight: 700;
+    font-style: normal;
+}
+
 button:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.1);
 }
