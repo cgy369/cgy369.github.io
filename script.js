@@ -96,15 +96,30 @@ async function quickSort(low, high) {
 }
 await quickSort(0, data.length - 1);`,
     custom: `// Writes your own sort!
-// Available: data (array), await swap(index1, index2)
-`
+// data 배열을 직접 변경하면 정렬이 적용됩니다. (Sorting is applied when you modify 'data')
+// 시각화를 원하시면 await swap(i, j)를 사용하세요. (Use await swap(i, j) for visualization)
+
+// Example:
+for (let i = 0; i < data.length; i++) {
+    for (let j = 0; j < data.length - i - 1; j++) {
+        if (data[j] > data[j + 1]) {
+            await swap(j, j + 1);
+        }
+    }
+}`
 };
 
 // --- Core Logic ---
 
 function generateArray() {
     data = [];
-    const size = appMode === 'game' ? 10 : CONFIG.arraySize; // Smaller array for game
+    // Use slider value if available, else default
+    const sliderVal = document.getElementById('sizeRange') ? parseInt(document.getElementById('sizeRange').value) : CONFIG.arraySize;
+
+    // In game mode, we might want to respect the slider too, or cap it?
+    // User requested "Allow user to specify", so we trust the slider.
+    const size = sliderVal;
+
     for (let i = 0; i < size; i++) {
         data.push(Math.floor(Math.random() * (CONFIG.maxVal - CONFIG.minVal + 1)) + CONFIG.minVal);
     }
@@ -207,14 +222,35 @@ function waitForDecision(prompt, btn1Text, btn2Text, validator) {
         feedbackMsg.textContent = '';
         feedbackMsg.className = 'feedback';
 
+        // Force visibility
         gameControls.classList.remove('hidden');
+        gameControls.style.display = 'block'; // Explicitly set display
+        gameControls.style.opacity = '1';
+        gameControls.style.transform = 'translateY(0)';
+
+        console.log("Game Controls Shown:", prompt); // Debug log
 
         gameResolvers = {
             resolve,
+            reject, // Expose reject to allow external cancellation
             validator,
             timestamp: Date.now()
         };
     });
+}
+
+function handleStop() {
+    if (isRunning) {
+        shouldStop = true;
+        // If we are waiting for a user decision, reject the promise immediately
+        if (gameResolvers) {
+            gameResolvers.reject(new Error('Stopped by user'));
+            gameResolvers = null;
+            // Hide overlay immediately
+            gameControls.className = 'game-controls hidden';
+            gameControls.style.display = 'none';
+        }
+    }
 }
 
 // Handle Decision
@@ -235,7 +271,10 @@ async function handleGameDecision(choiceIdx) {
 
         // Small delay for satisfaction
         await sleep(300);
+
         gameControls.classList.add('hidden');
+        gameControls.style.display = 'none'; // Explicitly hide
+
         resolve(true); // Continue
     } else {
         feedbackMsg.textContent = "Wrong! " + (result.message || "");
@@ -467,7 +506,8 @@ async function runGame() {
         }
     } finally {
         isRunning = false;
-        gameControls.classList.add('hidden'); // Hide controls
+        gameControls.classList.add('hidden');
+        gameControls.style.display = 'none';
         toggleControls(true);
     }
 }
@@ -481,14 +521,14 @@ btnRun.addEventListener('click', () => {
     else runGame();
 });
 
-btnStop.addEventListener('click', () => {
-    if (isRunning) shouldStop = true;
-});
+btnStop.addEventListener('click', handleStop);
 
 speedRange.addEventListener('input', (e) => {
     const val = parseInt(e.target.value);
     delayMs = 200 - (val * 1.9);
 });
+
+document.getElementById('sizeRange').addEventListener('input', generateArray);
 
 algoSelect.addEventListener('change', (e) => {
     const val = e.target.value;
@@ -531,6 +571,11 @@ modeRadios.forEach(radio => {
             elEditor.style.display = 'block';
             gameOverlay.classList.add('hidden');
             btnRun.textContent = "Run Code";
+
+            // Allow Custom preset to show the comment
+            if (algoSelect.value === 'custom') {
+                elEditor.value = PRESETS['custom'];
+            }
 
             generateArray();
         }
