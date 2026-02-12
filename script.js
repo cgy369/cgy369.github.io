@@ -218,7 +218,32 @@ while(stack.length > 0) {
     }
 }
 await reconstructionPath(endNode);`,
-    astar: `// A* Search`
+    astar: `// A* Search
+const openSet = [startNode];
+const closedSet = new Set();
+startNode.g = 0;
+startNode.f = dist(startNode, endNode);
+
+while(openSet.length > 0) {
+    openSet.sort((a,b) => a.f - b.f);
+    const current = openSet.shift();
+    if(current.id === endNode.id) break;
+    
+    closedSet.add(current.id);
+    await visit(current);
+    
+    for(let n of getNeighbors(current)) {
+        if(closedSet.has(n.id)) continue;
+        let tentG = current.g + 1;
+        if(!openSet.includes(n) || tentG < n.g) {
+            n.parent = current;
+            n.g = tentG;
+            n.f = n.g + dist(n, endNode);
+            if(!openSet.includes(n)) openSet.push(n);
+        }
+    }
+}
+await reconstructionPath(endNode);`
 };
 
 // --- Global State ---
@@ -238,7 +263,7 @@ const APP = {
     // Grid (Pathfinding, Maze, NQueens, GoL)
     grid: [],
     pfStart: { r: 1, c: 1 },
-    pfEnd: { r: 18, c: 18 },
+    pfEnd: { r: CONFIG.gridSize - 2, c: CONFIG.gridSize - 2 },
 
     // Maze State
     mazeStack: [],
@@ -297,6 +322,11 @@ const btnGolRandom = document.getElementById('btnGolRandom');
 const btnTspRun = document.getElementById('btnTspRun');
 const btnTspNew = document.getElementById('btnTspNew');
 
+// Pathfinding DOM
+const btnPfRun = document.getElementById('btnPfRun');
+const btnPfReset = document.getElementById('btnPfReset');
+const pfAlgoSelect = document.getElementById('pfAlgoSelect');
+
 
 // GoL DOM
 function init() {
@@ -347,6 +377,11 @@ function switchModule(modName) {
         if (modName === 'pathfinding') {
             elEditor.value = PF_PRESETS.astar;
             addPathfindingListeners();
+            // Restore Start/End Visuals (in case Maze Gen overwrote them)
+            const s = APP.grid[APP.pfStart.r][APP.pfStart.c];
+            const e = APP.grid[APP.pfEnd.r][APP.pfEnd.c];
+            if (s) { s.isWall = false; s.div.classList.remove('wall'); s.div.classList.add('start'); }
+            if (e) { e.isWall = false; e.div.classList.remove('wall'); e.div.classList.add('end'); }
         } else if (modName === 'maze') {
             elEditor.parentElement.style.display = 'none';
         } else if (modName === 'gameoflife') {
@@ -545,8 +580,11 @@ function generateGrid(size = CONFIG.gridSize) {
         APP.grid.push(row);
     }
 
+    // Always update Start/End to match grid size
+    APP.pfStart = { r: 1, c: 1 };
+    APP.pfEnd = { r: size - 2, c: size - 2 };
+
     if (APP.module === 'pathfinding') {
-        APP.pfStart = { r: 1, c: 1 }; APP.pfEnd = { r: size - 2, c: size - 2 };
         updateStartNode(APP.pfStart.r, APP.pfStart.c, true);
         updateEndNode(APP.pfEnd.r, APP.pfEnd.c, true);
     }
@@ -703,6 +741,67 @@ btnGolRandom.addEventListener('click', () => {
 });
 btnTspRun.addEventListener('click', solveTSP);
 btnTspNew.addEventListener('click', () => { generateTSP(); });
+
+// Pathfinding Listeners
+pfAlgoSelect.addEventListener('change', () => {
+    elEditor.value = PF_PRESETS[pfAlgoSelect.value];
+});
+
+btnPfReset.addEventListener('click', () => {
+    APP.shouldStop = true;
+    generateGrid(CONFIG.gridSize);
+});
+
+btnPfRun.addEventListener('click', async () => {
+    const code = elEditor.value;
+    // Context for Pathfinding Code
+    const startNode = APP.grid[APP.pfStart.r][APP.pfStart.c];
+    const endNode = APP.grid[APP.pfEnd.r][APP.pfEnd.c];
+
+    const visit = async (node) => {
+        if (APP.shouldStop) throw new Error('Stopped');
+        if (node !== startNode && node !== endNode) {
+            node.div.classList.add('visited');
+        }
+        await sleep(APP.delayMs);
+    };
+
+    const getNeighbors = (node) => {
+        let neighbors = [];
+        let dirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+        for (let d of dirs) {
+            let r = node.r + d[0], c = node.c + d[1];
+            if (r >= 0 && r < CONFIG.gridSize && c >= 0 && c < CONFIG.gridSize) {
+                if (!APP.grid[r][c].isWall) neighbors.push(APP.grid[r][c]);
+            }
+        }
+        return neighbors;
+    };
+
+    const reconstructionPath = async (node) => {
+        let curr = node.parent;
+        while (curr && curr !== startNode) {
+            curr.div.classList.add('path');
+            await sleep(APP.delayMs);
+            curr = curr.parent;
+        }
+    };
+
+    const dist = (a, b) => Math.abs(a.r - b.r) + Math.abs(a.c - b.c);
+
+    try {
+        APP.isRunning = true; APP.shouldStop = false;
+        btnStop.disabled = false;
+        const pfFunc = new Function('startNode', 'endNode', 'visit', 'getNeighbors', 'reconstructionPath', 'dist', 'APP', 'sleep', `return (async () => { ${code} })()`);
+        await pfFunc(startNode, endNode, visit, getNeighbors, reconstructionPath, dist, APP, sleep);
+    } catch (e) {
+        console.error("PF Error:", e);
+    } finally {
+        APP.isRunning = false;
+        btnStop.disabled = true;
+        setStatus(t('status_finished'));
+    }
+});
 
 btnStop.addEventListener('click', handleStop);
 
