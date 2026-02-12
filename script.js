@@ -1,6 +1,6 @@
 // --- Configuration ---
 const CONFIG = {
-    arraySize: 20, // Reduced for game mode playability
+    arraySize: 20,
     minVal: 5,
     maxVal: 100,
     defaultSpeed: 50,
@@ -10,41 +10,67 @@ const CONFIG = {
         sorted: '#10b981',
         pivot: '#8b5cf6',
         compare: '#fbbf24'
-    }
+    },
+    gridSize: 20
 };
 
-// --- State ---
-let data = [];
-let isRunning = false;
-let shouldStop = false;
-let delayMs = 50;
-let appMode = 'code'; // 'code' or 'game'
-let gameResolvers = null; // For handling user decisions
+// --- Global State ---
+const APP = {
+    module: 'sorting', // 'sorting' | 'pathfinding'
+    isRunning: false,
+    shouldStop: false,
+    delayMs: 50,
+    // Sorting State
+    sortMode: 'code', // 'code' | 'game'
+    sortData: [],
+    // Pathfinding State
+    pfMode: 'code', // 'code' | 'game'
+    grid: [], // 20x20 array of node objects
+    pfStart: { r: 2, c: 2 },
+    pfEnd: { r: 17, c: 17 },
+    isMousePressed: false,
+    pfResolvers: null
+};
 
 // --- DOM Elements ---
+// Shared
 const elEditor = document.getElementById('codeEditor');
-const elViz = document.getElementById('visualizerContainer');
 const elStatus = document.getElementById('statusText');
+const tabs = document.querySelectorAll('.tab-btn');
+
+// Sorting
+const elViz = document.getElementById('visualizerContainer');
+const controlsSorting = document.getElementById('controls_sorting');
 const btnRun = document.getElementById('btnRun');
 const btnStop = document.getElementById('btnStop');
 const btnGenerate = document.getElementById('btnGenerate');
 const speedRange = document.getElementById('speedRange');
+const sizeRange = document.getElementById('sizeRange');
 const algoSelect = document.getElementById('algoSelect');
-
-// Mode & Game UI
 const modeRadios = document.getElementsByName('appMode');
+
+// Pathfinding
+const elGrid = document.getElementById('gridContainer');
+const controlsPathfinding = document.getElementById('controls_pathfinding');
+const btnPfRun = document.getElementById('btnPfRun');
+const btnPfStop = document.getElementById('btnPfStop');
+const btnPfReset = document.getElementById('btnPfReset');
+const pfAlgoSelect = document.getElementById('pfAlgoSelect');
+const pfModeRadios = document.getElementsByName('pfAppMode');
+
+// Game UI (Shared)
 const gameOverlay = document.getElementById('gameOverlay');
 const gameControls = document.getElementById('gameControls');
 const stepDesc = document.getElementById('stepDesc');
-const btnAction1 = document.getElementById('btnAction1'); // Left / Yes
-const btnAction2 = document.getElementById('btnAction2'); // Right / No
+const btnAction1 = document.getElementById('btnAction1');
+const btnAction2 = document.getElementById('btnAction2');
 const feedbackMsg = document.getElementById('feedbackMsg');
 const gameInstruction = document.getElementById('gameInstruction');
 const editorTitle = document.getElementById('editorTitle');
 const editorSub = document.getElementById('editorSub');
 
 // --- Presets ---
-const PRESETS = {
+const SORT_PRESETS = {
     bubble: `// Bubble Sort
 for (let i = 0; i < data.length; i++) {
     for (let j = 0; j < data.length - i - 1; j++) {
@@ -98,47 +124,152 @@ await quickSort(0, data.length - 1);`,
     custom: `// Writes your own sort!
 // data 배열을 직접 변경하면 정렬이 적용됩니다. (Sorting is applied when you modify 'data')
 // 시각화를 원하시면 await swap(i, j)를 사용하세요. (Use await swap(i, j) for visualization)
-
-// Example:
-for (let i = 0; i < data.length; i++) {
-    for (let j = 0; j < data.length - i - 1; j++) {
-        if (data[j] > data[j + 1]) {
-            await swap(j, j + 1);
-        }
-    }
-}`
+`
 };
 
-// --- Core Logic ---
+const PF_PRESETS = {
+    bfs: `// Breadth-First Search
+const queue = [startNode];
+const visited = new Set();
+visited.add(startNode.id);
+
+while(queue.length > 0) {
+    const current = queue.shift();
+    if(current.id === endNode.id) break;
+    
+    await visit(current); // Visual effect
+    
+    const neighbors = getNeighbors(current);
+    for(let n of neighbors) {
+        if(!visited.has(n.id)) {
+            visited.add(n.id);
+            n.parent = current;
+            queue.push(n);
+        }
+    }
+}
+await reconstructionPath(endNode);`,
+    dfs: `// Depth-First Search
+const stack = [startNode];
+const visited = new Set();
+// visited.add(startNode.id); // Typically tracking on pop or push
+
+while(stack.length > 0) {
+    const current = stack.pop();
+    if(current.id === endNode.id) break;
+    
+    if(!visited.has(current.id)) {
+        visited.add(current.id);
+        await visit(current);
+        
+        const neighbors = getNeighbors(current);
+        for(let n of neighbors) {
+            if(!visited.has(n.id)) {
+                n.parent = current;
+                stack.push(n);
+            }
+        }
+    }
+}
+await reconstructionPath(endNode);`,
+    astar: `// A* Search (Coming Soon)`
+};
+
+// --- HELPERS ---
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+function setStatus(msg) {
+    elStatus.textContent = msg;
+}
+
+// --- INIT & TABS ---
+function init() {
+    // Generate Sorting Data
+    generateArray();
+
+    // Generate Grid
+    generateGrid();
+
+    // Default View
+    switchModule('sorting');
+}
+
+function switchModule(modName) {
+    APP.module = modName;
+
+    // Toggle Tabs
+    tabs.forEach(t => {
+        if (t.dataset.module === modName) t.classList.add('active');
+        else t.classList.remove('active');
+    });
+
+    // Toggle Containers & Controls
+    if (modName === 'sorting') {
+        elViz.classList.remove('hidden');
+        elGrid.classList.add('hidden');
+        controlsSorting.classList.remove('hidden');
+        controlsPathfinding.classList.add('hidden');
+
+        // Update Title/Sub based on Mode
+        updateEditorHeader();
+
+        elEditor.value = SORT_PRESETS[algoSelect.value];
+    } else {
+        elViz.classList.add('hidden');
+        elGrid.classList.remove('hidden');
+        controlsSorting.classList.add('hidden');
+        controlsPathfinding.classList.remove('hidden');
+
+        // Update Title/Sub
+        editorTitle.textContent = "JS Editor (Pathfinding)";
+        editorSub.innerHTML = "Available: <code>startNode</code>, <code>endNode</code>, <code>getNeighbors(node)</code>, <code>await visit(node)</code>";
+
+        elEditor.value = PF_PRESETS[pfAlgoSelect.value];
+    }
+}
+
+function updateEditorHeader() {
+    if (APP.sortMode === 'game') {
+        editorTitle.textContent = "Interactive Mode";
+        editorSub.textContent = "You are the CPU!";
+    } else {
+        editorTitle.textContent = "JavaScript Editor";
+        editorSub.innerHTML = "Available: <code>data[]</code>, <code>await swap(i,j)</code>";
+    }
+}
+
+tabs.forEach(t => t.addEventListener('click', () => switchModule(t.dataset.module)));
+
+
+// ==========================================
+// MODULE: SORTING
+// ==========================================
 
 function generateArray() {
-    data = [];
-    // Use slider value if available, else default
-    const sliderVal = document.getElementById('sizeRange') ? parseInt(document.getElementById('sizeRange').value) : CONFIG.arraySize;
-
-    // In game mode, we might want to respect the slider too, or cap it?
-    // User requested "Allow user to specify", so we trust the slider.
+    APP.sortData = [];
+    const sliderVal = sizeRange ? parseInt(sizeRange.value) : CONFIG.arraySize;
+    // In game mode, maybe force smaller size? But user requested slider control.
     const size = sliderVal;
 
     for (let i = 0; i < size; i++) {
-        data.push(Math.floor(Math.random() * (CONFIG.maxVal - CONFIG.minVal + 1)) + CONFIG.minVal);
+        APP.sortData.push(Math.floor(Math.random() * (CONFIG.maxVal - CONFIG.minVal + 1)) + CONFIG.minVal);
     }
     renderArray();
-    setStatus('Ready');
+    setStatus('Ready (Sorting)');
 }
 
 function renderArray(activeIndices = [], specialColor = null) {
     elViz.innerHTML = '';
-    const widthPercent = 100 / data.length;
+    const widthPercent = 100 / APP.sortData.length;
 
-    data.forEach((val, idx) => {
+    APP.sortData.forEach((val, idx) => {
         const bar = document.createElement('div');
         bar.className = 'bar';
         bar.style.height = `${val}%`;
         bar.style.width = `${widthPercent}%`;
 
-        // Default text content for game mode to make comparison easier
-        if (appMode === 'game') {
+        if (APP.sortMode === 'game') {
             bar.textContent = val;
             bar.style.color = '#fff';
             bar.style.fontSize = '10px';
@@ -156,217 +287,148 @@ function renderArray(activeIndices = [], specialColor = null) {
     });
 }
 
-function setStatus(msg) {
-    elStatus.textContent = msg;
-}
-
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-// --- Execution Engine (Code Mode) ---
-
+// User Code Execution (Sorting)
 async function swap(i, j) {
-    if (shouldStop) throw new Error('Stopped by user');
-
-    let temp = data[i];
-    data[i] = data[j];
-    data[j] = temp;
-
+    if (APP.shouldStop) throw new Error('Stopped by user');
+    let temp = APP.sortData[i];
+    APP.sortData[i] = APP.sortData[j];
+    APP.sortData[j] = temp;
     renderArray([i, j]);
-    await sleep(delayMs);
+    await sleep(APP.delayMs);
 }
 
-async function runUserCode() {
-    if (isRunning) return;
-
+async function runSortingCode() {
+    if (APP.isRunning) return;
     const code = elEditor.value;
-    isRunning = true;
-    shouldStop = false;
+    APP.isRunning = true;
+    APP.shouldStop = false;
     toggleControls(false);
-    setStatus('Running Code...');
+    setStatus('Running Sorting...');
 
     try {
         const userFunc = new Function('data', 'swap', `return (async () => { ${code} })()`);
-        await userFunc(data, swap);
+        await userFunc(APP.sortData, swap);
         renderArray();
         setStatus('Finished!');
     } catch (e) {
-        if (e.message === 'Stopped by user') {
-            setStatus('Stopped.');
-        } else {
-            console.error(e);
-            setStatus(`Error: ${e.message}`);
-            alert(`Error: ${e.message}`);
-        }
+        if (e.message === 'Stopped by user') setStatus('Stopped.');
+        else { console.error(e); alert(e); }
     } finally {
-        isRunning = false;
+        APP.isRunning = false;
         toggleControls(true);
     }
 }
 
-// --- Interactive Mode Logic ---
+// ==========================================
+// INTERACTIVE MODE (SORTING)
+// ==========================================
 
-// Helper: Wait for user click
 function waitForDecision(prompt, btn1Text, btn2Text, validator) {
     return new Promise((resolve, reject) => {
-        if (shouldStop) {
-            reject(new Error('Stopped by user'));
-            return;
-        }
+        if (APP.shouldStop) { reject(new Error('Stopped by user')); return; }
 
-        // Show Controls
         stepDesc.innerHTML = prompt;
         btnAction1.textContent = btn1Text;
         btnAction2.textContent = btn2Text;
         feedbackMsg.textContent = '';
         feedbackMsg.className = 'feedback';
 
-        // Force visibility
         gameControls.classList.remove('hidden');
-        gameControls.style.display = 'block'; // Explicitly set display
-        gameControls.style.opacity = '1';
-        gameControls.style.transform = 'translateY(0)';
+        gameControls.style.display = 'block';
 
-        console.log("Game Controls Shown:", prompt); // Debug log
-
-        gameResolvers = {
-            resolve,
-            reject, // Expose reject to allow external cancellation
-            validator,
-            timestamp: Date.now()
-        };
+        APP.pfResolvers = { resolve, reject, validator };
     });
 }
 
-function handleStop() {
-    if (isRunning) {
-        shouldStop = true;
-        // If we are waiting for a user decision, reject the promise immediately
-        if (gameResolvers) {
-            gameResolvers.reject(new Error('Stopped by user'));
-            gameResolvers = null;
-            // Hide overlay immediately
-            gameControls.className = 'game-controls hidden';
-            gameControls.style.display = 'none';
-        }
-    }
-}
-
-// Handle Decision
 async function handleGameDecision(choiceIdx) {
-    if (!gameResolvers) return;
+    if (!APP.pfResolvers) return;
+    const { resolve, validator } = APP.pfResolvers;
 
-    const { resolve, validator } = gameResolvers;
-
-    const result = validator(choiceIdx); // Returns { correct: bool, message: str, action: fn }
-
+    const result = validator(choiceIdx);
     if (result.correct) {
         feedbackMsg.textContent = "Correct! " + (result.message || "");
         feedbackMsg.classList.add('correct');
-        gameResolvers = null; // Clear
+        APP.pfResolvers = null;
 
-        // Execute the action (e.g., swap)
         if (result.action) await result.action();
-
-        // Small delay for satisfaction
         await sleep(300);
 
         gameControls.classList.add('hidden');
-        gameControls.style.display = 'none'; // Explicitly hide
-
-        resolve(true); // Continue
+        gameControls.style.display = 'none';
+        resolve(true);
     } else {
         feedbackMsg.textContent = "Wrong! " + (result.message || "");
         feedbackMsg.classList.add('wrong');
-        setTimeout(() => feedbackMsg.classList.remove('wrong'), 500); // Reset shake
-        // Do not resolve; user must try again
+        setTimeout(() => feedbackMsg.classList.remove('wrong'), 500);
     }
 }
 
-// 1. Interactive Bubble Sort
+// Algorithms
 async function interactiveBubbleSort() {
-    for (let i = 0; i < data.length; i++) {
-        for (let j = 0; j < data.length - i - 1; j++) {
+    for (let i = 0; i < APP.sortData.length; i++) {
+        for (let j = 0; j < APP.sortData.length - i - 1; j++) {
             renderArray([j, j + 1], CONFIG.colors.compare);
-            const valA = data[j];
-            const valB = data[j + 1];
+            const valA = APP.sortData[j];
+            const valB = APP.sortData[j + 1];
             const shouldSwap = valA > valB;
 
             await waitForDecision(
                 `Compare <b>[${valA}]</b> and <b>[${valB}]</b>.<br>Should we swap?`,
                 "Swap", "Pass",
                 (choice) => {
-                    // Choice 1 = Swap, 2 = Pass
                     if (choice === 1 && shouldSwap) return { correct: true, action: async () => await swap(j, j + 1) };
                     if (choice === 2 && !shouldSwap) return { correct: true };
 
-                    if (choice === 1 && !shouldSwap) return { correct: false, message: `${valA} is not larger than ${valB}.` };
-                    if (choice === 2 && shouldSwap) return { correct: false, message: `${valA} is larger than ${valB}!` };
-                    return { correct: false };
+                    if (choice === 1 && !shouldSwap) return { correct: false, message: `${valA} <= ${valB}.` };
+                    if (choice === 2 && shouldSwap) return { correct: false, message: `${valA} > ${valB}!` };
                 }
             );
         }
     }
 }
 
-// 2. Interactive Selection Sort
 async function interactiveSelectionSort() {
-    for (let i = 0; i < data.length; i++) {
+    for (let i = 0; i < APP.sortData.length; i++) {
         let minIdx = i;
-        renderArray([i], CONFIG.colors.active); // Show current start position
+        renderArray([i], CONFIG.colors.active);
 
-        for (let j = i + 1; j < data.length; j++) {
+        for (let j = i + 1; j < APP.sortData.length; j++) {
             renderArray([minIdx, j], CONFIG.colors.compare);
-            const currentMin = data[minIdx];
-            const compareVal = data[j];
+            const currentMin = APP.sortData[minIdx];
+            const compareVal = APP.sortData[j];
             const isSmaller = compareVal < currentMin;
 
             await waitForDecision(
                 `Current Min: <b>${currentMin}</b>. Check <b>${compareVal}</b>.<br>Is ${compareVal} smaller?`,
                 "Yes (New Min)", "No (Pass)",
                 (choice) => {
-                    // Choice 1 = Yes, 2 = No
-                    if (choice === 1 && isSmaller) {
-                        minIdx = j; // Update locally
-                        return { correct: true };
-                    }
+                    if (choice === 1 && isSmaller) { minIdx = j; return { correct: true }; }
                     if (choice === 2 && !isSmaller) return { correct: true };
-
-                    if (choice === 1 && !isSmaller) return { correct: false, message: `${compareVal} is not smaller than ${currentMin}.` };
-                    if (choice === 2 && isSmaller) return { correct: false, message: `${compareVal} IS smaller!` };
+                    return { correct: false, message: isSmaller ? "It IS smaller!" : "Not smaller." };
                 }
             );
         }
-
-        if (minIdx !== i) {
-            await swap(i, minIdx);
-        }
+        if (minIdx !== i) await swap(i, minIdx);
     }
 }
 
-// 3. Interactive Insertion Sort
 async function interactiveInsertionSort() {
-    for (let i = 1; i < data.length; i++) {
+    for (let i = 1; i < APP.sortData.length; i++) {
         let j = i;
-        // renderArray([i], CONFIG.colors.active);
-
         while (j > 0) {
             renderArray([j, j - 1], CONFIG.colors.compare);
-            const current = data[j];
-            const left = data[j - 1];
+            const current = APP.sortData[j];
+            const left = APP.sortData[j - 1];
             const shouldShift = current < left;
 
-            if (!shouldShift) break; // Optimization: if correct, stop
+            if (!shouldShift) break;
 
             await waitForDecision(
                 `Target <b>${current}</b> vs Left <b>${left}</b>.<br>Insert here or keep moving left?`,
                 "Move Left (Swap)", "Stay Here",
                 (choice) => {
                     if (choice === 1 && shouldShift) return { correct: true, action: async () => await swap(j, j - 1) };
-                    // In insertion, we theoretically 'shift', but swap is easier to visualize 1 by 1
-
-                    if (choice === 2) return { correct: false, message: `${current} is smaller than ${left}, must move left!` };
+                    if (choice === 2) return { correct: false, message: `${current} < ${left}, move left!` };
                 }
             );
             j--;
@@ -374,30 +436,22 @@ async function interactiveInsertionSort() {
     }
 }
 
-// 4. Interactive Quick Sort
 async function interactiveQuickSort() {
     async function partition(low, high) {
-        let pivot = data[high];
+        let pivot = APP.sortData[high];
         let i = low - 1;
-
-        // Highlight Pivot
-        // We can't easily persist colors in this simple renderArray, so we'll just focus on comparisons
-
         for (let j = low; j < high; j++) {
-            renderArray([j, high], CONFIG.colors.compare); // j and Pivot
-            const val = data[j];
+            renderArray([j, high], CONFIG.colors.compare);
+            const val = APP.sortData[j];
             const isLeft = val < pivot;
 
             await waitForDecision(
-                `Pivot is <b>${pivot}</b>. Value is <b>${val}</b>.<br>Where do we put ${val}?`,
+                `Pivot <b>${pivot}</b> vs <b>${val}</b>.<br>Where to put ${val}?`,
                 "Left (Smaller)", "Right (Larger)",
                 (choice) => {
-                    // Choice 1 = Left, 2 = Right
                     if (choice === 1 && isLeft) return { correct: true, action: async () => { i++; await swap(i, j); } };
-                    if (choice === 2 && !isLeft) return { correct: true }; // Stay on right (do nothing)
-
-                    if (choice === 1 && !isLeft) return { correct: false, message: `${val} is larger than ${pivot}!` };
-                    if (choice === 2 && isLeft) return { correct: false, message: `${val} is smaller than ${pivot}!` };
+                    if (choice === 2 && !isLeft) return { correct: true };
+                    return { correct: false, message: isLeft ? "Smaller -> Left" : "Larger -> Right" };
                 }
             );
         }
@@ -412,67 +466,14 @@ async function interactiveQuickSort() {
             await quickSortRecursive(pi + 1, high);
         }
     }
-
-    await quickSortRecursive(0, data.length - 1);
+    await quickSortRecursive(0, APP.sortData.length - 1);
 }
-
-// 5. Interactive Merge Sort (Simplified)
-// Visualizing merge sort in-place array is hard. We will do a simulation of 'Pick Smaller' for the merge step.
-async function interactiveMergeSort() {
-    async function merge(low, mid, high) {
-        // Create temp arrays
-        const n1 = mid - low + 1;
-        const n2 = high - mid;
-        let L = new Array(n1);
-        let R = new Array(n2);
-
-        for (let i = 0; i < n1; i++) L[i] = data[low + i];
-        for (let j = 0; j < n2; j++) R[j] = data[mid + 1 + j];
-
-        let i = 0, j = 0, k = low;
-
-        while (i < n1 && j < n2) {
-            renderArray([k], CONFIG.colors.active); // Show where we are filling
-            const valL = L[i];
-            const valR = R[j];
-            const pickLeft = valL <= valR;
-
-            await waitForDecision(
-                `Merging... Left Head: <b>${valL}</b> | Right Head: <b>${valR}</b>.<br>Which one is smaller?`,
-                `Left (${valL})`, `Right (${valR})`,
-                (choice) => {
-                    if (choice === 1 && pickLeft) return { correct: true, action: async () => { data[k] = valL; i++; } };
-                    if (choice === 2 && !pickLeft) return { correct: true, action: async () => { data[k] = valR; j++; } };
-
-                    return { correct: false, message: `Pick the smaller value!` };
-                }
-            );
-            renderArray([k]); // Update visual
-            k++;
-        }
-
-        // Copy remaining (Auto, no user interaction for cleanup)
-        while (i < n1) { data[k] = L[i]; i++; k++; renderArray([k]); await sleep(delayMs); }
-        while (j < n2) { data[k] = R[j]; j++; k++; renderArray([k]); await sleep(delayMs); }
-    }
-
-    async function mergeSort(low, high) {
-        if (low >= high) return;
-        const mid = low + Math.floor((high - low) / 2);
-        await mergeSort(low, mid);
-        await mergeSort(mid + 1, high);
-        await merge(low, mid, high);
-    }
-
-    await mergeSort(0, data.length - 1);
-}
-
 
 async function runGame() {
-    if (isRunning) return;
+    if (APP.isRunning) return;
 
-    isRunning = true;
-    shouldStop = false;
+    APP.isRunning = true;
+    APP.shouldStop = false;
     toggleControls(false);
     setStatus('Game Started! Good Luck!');
 
@@ -484,117 +485,245 @@ async function runGame() {
         else if (algo === 'insertion') await interactiveInsertionSort();
         else if (algo === 'quick') await interactiveQuickSort();
         else {
-            // Default to Merge for 'custom' or others to keep it interesting
-            // Or alert if custom is selected
-            if (algo === 'custom') {
-                alert("Interactive mode doesn't support Custom code yet. Running Merge Sort!");
-                await interactiveMergeSort();
-            } else {
-                await interactiveMergeSort(); // Default fallback
-            }
+            alert("Custom game not supported yet.");
         }
 
         renderArray([], CONFIG.colors.sorted);
         setStatus('You Won! Array Sorted!');
         gameInstruction.textContent = "Victory! The array is sorted.";
     } catch (e) {
-        if (e.message === 'Stopped by user') {
-            setStatus('Game Stopped.');
-        } else {
-            console.error(e);
-            setStatus(`Error: ${e.message}`);
-        }
+        if (e.message === 'Stopped by user') setStatus('Game Stopped.');
+        else { console.error(e); setStatus(`Error: ${e.message}`); }
     } finally {
-        isRunning = false;
+        APP.isRunning = false;
         gameControls.classList.add('hidden');
         gameControls.style.display = 'none';
         toggleControls(true);
     }
 }
 
-// --- Event Listeners ---
 
-btnGenerate.addEventListener('click', generateArray);
+// ==========================================
+// MODULE: PATHFINDING
+// ==========================================
 
+function generateGrid() {
+    elGrid.innerHTML = '';
+    elGrid.style.gridTemplateColumns = `repeat(${CONFIG.gridSize}, 1fr)`;
+    APP.grid = [];
+
+    for (let r = 0; r < CONFIG.gridSize; r++) {
+        let row = [];
+        for (let c = 0; c < CONFIG.gridSize; c++) {
+            let node = {
+                id: `${r}-${c}`,
+                r, c,
+                isWall: false,
+                div: null
+            };
+
+            const div = document.createElement('div');
+            div.className = 'node';
+            div.dataset.r = r;
+            div.dataset.c = c;
+
+            // Interaction
+            div.addEventListener('mousedown', () => {
+                APP.isMousePressed = true;
+                toggleWall(node);
+            });
+            div.addEventListener('mouseenter', () => {
+                if (APP.isMousePressed) toggleWall(node);
+            });
+
+            if (r === APP.pfStart.r && c === APP.pfStart.c) div.classList.add('start');
+            if (r === APP.pfEnd.r && c === APP.pfEnd.c) div.classList.add('end');
+
+            node.div = div;
+            elGrid.appendChild(div);
+            row.push(node);
+        }
+        APP.grid.push(row);
+    }
+}
+
+function toggleWall(node) {
+    if ((node.r === APP.pfStart.r && node.c === APP.pfStart.c) ||
+        (node.r === APP.pfEnd.r && node.c === APP.pfEnd.c)) return;
+
+    node.isWall = !node.isWall;
+    if (node.isWall) node.div.classList.add('wall');
+    else node.div.classList.remove('wall');
+}
+
+document.addEventListener('mouseup', () => APP.isMousePressed = false);
+
+// Helper for User Code
+function getNeighbors(node) {
+    const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    const neighbors = [];
+    for (let d of dirs) {
+        const nr = node.r + d[0];
+        const nc = node.c + d[1];
+        if (nr >= 0 && nr < CONFIG.gridSize && nc >= 0 && nc < CONFIG.gridSize) {
+            const n = APP.grid[nr][nc];
+            if (!n.isWall) neighbors.push(n);
+        }
+    }
+    return neighbors;
+}
+
+// API for User Code
+async function visit(node) {
+    if (APP.shouldStop) throw new Error('Stopped by user');
+    if (node.div.classList.contains('start') || node.div.classList.contains('end')) return;
+
+    node.div.classList.add('visited');
+    await sleep(APP.delayMs);
+}
+
+async function reconstructionPath(endNode) {
+    let curr = endNode.parent;
+    while (curr && curr.parent) {
+        if (APP.shouldStop) throw new Error('Stopped by user');
+        curr.div.classList.remove('visited');
+        curr.div.classList.add('path');
+        curr = curr.parent;
+        await sleep(50);
+    }
+}
+
+
+async function runPathfindingCode() {
+    if (APP.isRunning) return;
+    const code = elEditor.value;
+    APP.isRunning = true;
+    APP.shouldStop = false;
+    toggleControls(false);
+    setStatus('Running Pathfinding...');
+
+    // Reset Visualization (keep walls)
+    APP.grid.forEach(row => row.forEach(n => {
+        n.div.classList.remove('visited', 'path');
+        n.parent = null;
+    }));
+
+    try {
+        const startNode = APP.grid[APP.pfStart.r][APP.pfStart.c];
+        const endNode = APP.grid[APP.pfEnd.r][APP.pfEnd.c];
+
+        const userFunc = new Function(
+            'startNode', 'endNode', 'getNeighbors', 'visit', 'reconstructionPath',
+            `return (async () => { ${code} })()`
+        );
+
+        await userFunc(startNode, endNode, getNeighbors, visit, reconstructionPath);
+        setStatus('Finished!');
+    } catch (e) {
+        if (e.message === 'Stopped by user') setStatus('Stopped.');
+        else { console.error(e); alert(e.message); }
+    } finally {
+        APP.isRunning = false;
+        toggleControls(true);
+    }
+}
+
+// ==========================================
+// SHARED UI LOGIC
+// ==========================================
+
+function toggleControls(enable) {
+    const btns = [btnRun, btnGenerate, algoSelect, btnPfRun, btnPfReset, pfAlgoSelect, ...tabs];
+    btns.forEach(b => b.disabled = !enable);
+
+    // Mode radios logic is complex, just disable all for now
+    modeRadios.forEach(r => r.disabled = !enable);
+
+    if (APP.module === 'sorting') btnStop.disabled = enable;
+    else btnPfStop.disabled = enable;
+}
+
+function handleStop() {
+    if (APP.isRunning) {
+        APP.shouldStop = true;
+        // If interactive game pending
+        if (APP.pfResolvers) {
+            APP.pfResolvers.reject(new Error('Stopped by user'));
+            APP.pfResolvers = null;
+            gameControls.classList.add('hidden');
+            gameControls.style.display = 'none';
+        }
+    }
+}
+
+// Event Listeners (Sorting)
 btnRun.addEventListener('click', () => {
-    if (appMode === 'code') runUserCode();
+    if (APP.sortMode === 'code') runSortingCode();
     else runGame();
 });
 
+btnGenerate.addEventListener('click', generateArray);
 btnStop.addEventListener('click', handleStop);
 
-speedRange.addEventListener('input', (e) => {
-    const val = parseInt(e.target.value);
-    delayMs = 200 - (val * 1.9);
+// Sorting Mode Switch
+modeRadios.forEach(radio => {
+    radio.addEventListener('change', (e) => {
+        APP.sortMode = e.target.value;
+        if (APP.isRunning) handleStop();
+
+        if (APP.sortMode === 'game') {
+            elEditor.style.display = 'none';
+            gameOverlay.classList.remove('hidden');
+            btnRun.textContent = "Start Game";
+            updateEditorHeader();
+            generateArray(); // Reset array
+        } else {
+            elEditor.style.display = 'block';
+            gameOverlay.classList.add('hidden');
+            btnRun.textContent = "Run Code";
+            updateEditorHeader();
+            generateArray();
+        }
+    });
 });
-
-document.getElementById('sizeRange').addEventListener('input', generateArray);
-
-algoSelect.addEventListener('change', (e) => {
-    const val = e.target.value;
-    if (appMode === 'code' && PRESETS[val]) {
-        elEditor.value = PRESETS[val];
+algoSelect.addEventListener('change', () => {
+    if (APP.sortMode === 'code') {
+        elEditor.value = SORT_PRESETS[algoSelect.value];
     }
-
-    // Update Instruction for Game Mode
-    if (appMode === 'game') {
+    // Update game instructions if needed
+    if (APP.sortMode === 'game') {
         const descriptions = {
             'bubble': 'Bubble Sort: Compare adjacent items and swap if they are in wrong order.',
             'selection': 'Selection Sort: Find the minimum value and move it to the front.',
             'insertion': 'Insertion Sort: Take an item and insert it into the correct position.',
             'quick': 'Quick Sort: Compare items to a pivot and move smaller ones to the left.',
-            'custom': 'Merge Sort (Bonus): Pick the smaller item from two piles to merge them.'
         };
-        gameInstruction.textContent = descriptions[val] || descriptions['custom'];
+        gameInstruction.textContent = descriptions[algoSelect.value] || "Algorithm selected.";
     }
 });
 
-// Mode Switching
-modeRadios.forEach(radio => {
-    radio.addEventListener('change', (e) => {
-        appMode = e.target.value;
-        shouldStop = true; // Stop any running process
 
-        if (appMode === 'game') {
-            // Switch UI
-            editorTitle.textContent = "Interactive Mode";
-            editorSub.textContent = "You are the CPU!";
-            elEditor.style.display = 'none';
-            gameOverlay.classList.remove('hidden');
-            btnRun.textContent = "Start Game";
-
-            // Trigger generation for fewer items
-            generateArray();
-        } else {
-            editorTitle.textContent = "JavaScript Editor";
-            editorSub.innerHTML = "Available: <code>data[]</code>, <code>await swap(i,j)</code>";
-            elEditor.style.display = 'block';
-            gameOverlay.classList.add('hidden');
-            btnRun.textContent = "Run Code";
-
-            // Allow Custom preset to show the comment
-            if (algoSelect.value === 'custom') {
-                elEditor.value = PRESETS['custom'];
-            }
-
-            generateArray();
-        }
-    });
+// Event Listeners (Pathfinding)
+btnPfRun.addEventListener('click', runPathfindingCode);
+btnPfReset.addEventListener('click', () => {
+    generateGrid(); // clean reset
+});
+btnPfStop.addEventListener('click', handleStop);
+pfAlgoSelect.addEventListener('change', (e) => {
+    if (APP.pfMode === 'code') elEditor.value = PF_PRESETS[e.target.value];
 });
 
 // Game Action Buttons
 btnAction1.addEventListener('click', () => handleGameDecision(1));
 btnAction2.addEventListener('click', () => handleGameDecision(2));
 
+// Speed
+speedRange.addEventListener('input', (e) => {
+    const val = parseInt(e.target.value);
+    APP.delayMs = 200 - (val * 1.9);
+});
+sizeRange.addEventListener('input', generateArray);
 
-function toggleControls(enable) {
-    btnRun.disabled = !enable;
-    btnGenerate.disabled = !enable;
-    algoSelect.disabled = !enable;
-    btnStop.disabled = enable;
-    modeRadios.forEach(r => r.disabled = !enable);
-}
 
-// --- Init ---
-generateArray();
-elEditor.value = PRESETS['bubble'];
+// Boot
+init();

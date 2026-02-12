@@ -12,6 +12,14 @@
     --bar-sorted: #10b981;
     --font-mono: 'Fira Code', monospace;
     --font-sans: 'Inter', sans-serif;
+
+    /* Pathfinding Colors */
+    --node-empty: #1e293b;
+    --node-wall: #334155;
+    --node-start: #22c55e;
+    --node-end: #ef4444;
+    --node-visited: #3b82f6;
+    --node-path: #facc15;
 }
 
 * {
@@ -34,6 +42,10 @@ body {
     height: 100%;
 }
 
+.hidden {
+    display: none !important;
+}
+
 /* Toolbar */
 .toolbar {
     background-color: var(--bg-panel);
@@ -45,6 +57,12 @@ body {
     gap: 1rem;
 }
 
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
 .brand h1 {
     font-size: 1.5rem;
     font-weight: 700;
@@ -54,7 +72,36 @@ body {
     color: var(--primary);
 }
 
+.module-tabs {
+    display: flex;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 2px;
+}
+
+.tab-btn {
+    background: transparent;
+    border: none;
+    padding: 6px 12px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.tab-btn.active {
+    background-color: var(--primary);
+    color: white;
+    font-weight: 600;
+}
+
 .controls {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+}
+
+.module-controls {
     display: flex;
     gap: 2rem;
     align-items: center;
@@ -132,6 +179,8 @@ button:disabled {
 .viz-pane {
     background-color: var(--bg-dark);
     padding: 1rem;
+    display: flex;
+    flex-direction: column;
 }
 
 .pane-header {
@@ -190,6 +239,67 @@ button:disabled {
     background-color: var(--bar-sorted);
 }
 
+/* Pathfinding Grid */
+#gridContainer {
+    flex: 1;
+    display: grid;
+    /* Columns will be set in JS: repeat(20, 1fr) */
+    gap: 1px;
+    padding: 1rem;
+    background: #0f172a;
+    align-self: center;
+    justify-self: center;
+    aspect-ratio: 1;
+    /* Keep square */
+    max-height: 100%;
+}
+
+.node {
+    background-color: var(--node-empty);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+    transition: background-color 0.1s;
+}
+
+.node:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.node.wall {
+    background-color: var(--node-wall);
+    border-color: transparent;
+}
+
+.node.start {
+    background-color: var(--node-start);
+}
+
+.node.end {
+    background-color: var(--node-end);
+}
+
+.node.visited {
+    background-color: var(--node-visited);
+    animation: pop 0.2s ease-out;
+}
+
+.node.path {
+    background-color: var(--node-path);
+    animation: pop 0.2s ease-out;
+}
+
+@keyframes pop {
+    0% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
 /* Footer / Ad */
 .ad-footer {
     height: 100px;
@@ -216,7 +326,7 @@ button:disabled {
     /* Cut off anything extra */
 }
 
-/* --- Interactive Mode Styles --- */
+/* --- Interactive Mode Styles (Shared) --- */
 /* Mode Toggle */
 .mode-toggle {
     background: rgba(0, 0, 0, 0.2);

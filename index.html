@@ -22,45 +22,81 @@
         <!-- Header & Controls -->
         <header class="toolbar">
             <div class="brand">
-                <h1>JS Sort <span class="highlight">Playground</span></h1>
+                <h1>JS <span class="highlight">Playground</span></h1>
+                <div class="module-tabs">
+                    <button class="tab-btn active" data-module="sorting">Sorting</button>
+                    <button class="tab-btn" data-module="pathfinding">Pathfinding</button>
+                </div>
             </div>
 
             <div class="controls">
-                <div class="control-group mode-toggle">
-                    <label>Mode:</label>
-                    <div class="toggle-switch">
-                        <input type="radio" id="modeCode" name="appMode" value="code" checked>
-                        <label for="modeCode">Code</label>
-                        <input type="radio" id="modeGame" name="appMode" value="game">
-                        <label for="modeGame">Game</label>
+                <!-- Sorting Controls -->
+                <div id="controls_sorting" class="module-controls">
+                    <div class="control-group mode-toggle">
+                        <label>Mode:</label>
+                        <div class="toggle-switch">
+                            <input type="radio" id="modeCode" name="appMode" value="code" checked>
+                            <label for="modeCode">Code</label>
+                            <input type="radio" id="modeGame" name="appMode" value="game">
+                            <label for="modeGame">Game</label>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Algo:</label>
+                        <select id="algoSelect">
+                            <option value="bubble">Bubble Sort</option>
+                            <option value="selection">Selection Sort</option>
+                            <option value="insertion">Insertion Sort</option>
+                            <option value="quick">Quick Sort</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <button id="btnGenerate" class="btn secondary">Shuffle</button>
+                        <button id="btnRun" class="btn primary">Run</button>
+                        <button id="btnStop" class="btn danger" disabled>Stop</button>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Size:</label>
+                        <input type="range" id="sizeRange" min="5" max="50" value="20">
+                    </div>
+
+                    <div class="control-group">
+                        <label>Speed:</label>
+                        <input type="range" id="speedRange" min="1" max="100" value="50">
                     </div>
                 </div>
 
-                <div class="control-group">
-                    <label>Algorithm Preset:</label>
-                    <select id="algoSelect">
-                        <option value="bubble">Bubble Sort</option>
-                        <option value="selection">Selection Sort</option>
-                        <option value="insertion">Insertion Sort</option>
-                        <option value="quick">Quick Sort (Simple)</option>
-                        <option value="custom">Custom</option>
-                    </select>
-                </div>
+                <!-- Pathfinding Controls (Hidden by default) -->
+                <div id="controls_pathfinding" class="module-controls hidden">
+                    <div class="control-group mode-toggle">
+                        <label>Mode:</label>
+                        <div class="toggle-switch">
+                            <input type="radio" id="pfModeCode" name="pfAppMode" value="code" checked>
+                            <label for="pfModeCode">Code</label>
+                            <input type="radio" id="pfModeGame" name="pfAppMode" value="game">
+                            <label for="pfModeGame">Game</label>
+                        </div>
+                    </div>
 
-                <div class="control-group">
-                    <button id="btnGenerate" class="btn secondary">Re-Shuffle Array</button>
-                    <button id="btnRun" class="btn primary">Run Code</button>
-                    <button id="btnStop" class="btn danger" disabled>Stop</button>
-                </div>
+                    <div class="control-group">
+                        <label>Algo:</label>
+                        <select id="pfAlgoSelect">
+                            <option value="bfs">BFS</option>
+                            <option value="dfs">DFS</option>
+                            <option value="astar">A* Search</option>
+                        </select>
+                    </div>
 
-                <div class="control-group">
-                    <label>Size:</label>
-                    <input type="range" id="sizeRange" min="5" max="50" value="20">
-                </div>
-
-                <div class="control-group">
-                    <label>Speed:</label>
-                    <input type="range" id="speedRange" min="1" max="100" value="50">
+                    <div class="control-group">
+                        <button id="btnPfReset" class="btn secondary">Reset</button>
+                        <button id="btnPfRun" class="btn primary">Run</button>
+                        <!-- Stop shared? Or separate? Let's assume shared execution engine for now or add new btn -->
+                        <button id="btnPfStop" class="btn danger" disabled>Stop</button>
+                    </div>
                 </div>
             </div>
         </header>
@@ -70,8 +106,8 @@
             <!-- Code Editor Pane -->
             <section class="pane editor-pane">
                 <div class="pane-header">
-                    <span>JavaScript Editor</span>
-                    <small>Available: <code>data[]</code>, <code>await swap(i,j)</code></small>
+                    <span id="editorTitle">JavaScript Editor</span>
+                    <small id="editorSub">Available: <code>data[]</code>, <code>await swap(i,j)</code></small>
                 </div>
                 <!-- Simple Textarea for now, can upgrade to CodeMirror later if needed -->
                 <textarea id="codeEditor" spellcheck="false"></textarea>
@@ -99,11 +135,18 @@
             <!-- Visualizer Pane -->
             <section class="pane viz-pane">
                 <div class="pane-header">
-                    <span>Visualizer</span>
+                    <span id="vizTitle">Visualizer</span>
                     <span id="statusText">Ready</span>
                 </div>
+
+                <!-- Sorting Visualizer -->
                 <div id="visualizerContainer">
                     <!-- Bars will be injected here by JS -->
+                </div>
+
+                <!-- Pathfinding Grid (Hidden by default) -->
+                <div id="gridContainer" class="hidden">
+                    <!-- Grid cells injected here -->
                 </div>
             </section>
         </main>
