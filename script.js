@@ -291,7 +291,8 @@ const APP = {
     pixelAction: 'remove', // 'remove' or 'replace'
     pixelTool: 'mask',     // 'mask' or 'smudge'
     pixelBrushSize: 30,
-    lastMousePos: { x: 0, y: 0 }
+    lastMousePos: { x: 0, y: 0 },
+    pixelParticles: []     // Track grains for Sand tool
 };
 
 // --- DOM Elements ---
@@ -1126,6 +1127,7 @@ function updateLastMousePos(e) {
 function handlePixelUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
+    APP.pixelParticles = []; // Clear grains on new upload
     const reader = new FileReader();
     reader.onload = (event) => {
         const img = new Image();
@@ -1150,6 +1152,7 @@ function handlePixelUpload(e) {
 
 function resetPixelImage() {
     if (!APP.pixelOriginalData) return;
+    APP.pixelParticles = []; // Clear grains
     const ctx = elPixelCanvas.getContext('2d');
     ctx.putImageData(APP.pixelOriginalData, 0, 0);
 }
@@ -1240,7 +1243,7 @@ function scatterSand(mx, my) {
     if (!APP.pixelOriginalData) return;
     const ctx = elPixelCanvas.getContext('2d');
     const radius = APP.pixelBrushSize;
-    const density = 20; // Grains per move
+    const density = 25; // Grains per move
     const origData = APP.pixelOriginalData.data;
     const w = elPixelCanvas.width;
     const h = elPixelCanvas.height;
@@ -1248,17 +1251,30 @@ function scatterSand(mx, my) {
     for (let i = 0; i < density; i++) {
         const angle = Math.random() * Math.PI * 2;
         const r = Math.sqrt(Math.random()) * radius;
-        const sx = Math.floor(mx + Math.cos(angle) * r);
-        const sy = Math.floor(my + Math.sin(angle) * r);
+
+        // Destination: Where it's sprayed
+        const dx = Math.floor(mx + Math.cos(angle) * r);
+        const dy = Math.floor(my + Math.sin(angle) * r);
+
+        // Source: Pick a random point near the mouse to "take" from
+        // Or better yet, sample from the source image at the SAME coordinate
+        // to make it look like the image is being "broken" at that spot.
+        const sx = dx, sy = dy;
 
         if (sx >= 0 && sx < w && sy >= 0 && sy < h) {
-            // Pick color from the same location in the original image
             const idx = (sy * w + sx) * 4;
-            const r = origData[idx], g = origData[idx + 1], b = origData[idx + 2], a = origData[idx + 3];
+            const pr = origData[idx], pg = origData[idx + 1], pb = origData[idx + 2], pa = origData[idx + 3];
 
-            // Draw a grain (slightly offset/scattered)
-            ctx.fillStyle = `rgba(${r},${g},${b},${a / 255})`;
-            ctx.fillRect(sx, sy, 2, 2);
+            // Record grain
+            APP.pixelParticles.push({
+                color: `rgba(${pr},${pg},${pb},${pa / 255})`,
+                cur: { x: dx, y: dy },
+                tar: { x: sx, y: sy }
+            });
+
+            // Draw grain
+            ctx.fillStyle = `rgba(${pr},${pg},${pb},${pa / 255})`;
+            ctx.fillRect(dx, dy, 2, 2);
         }
     }
 }
@@ -1331,32 +1347,61 @@ function animatePixelHeal() {
     const width = elPixelCanvas.width;
     const height = elPixelCanvas.height;
 
-    const startData = ctx.getImageData(0, 0, width, height).data;
-    const targetData = APP.pixelOriginalData.data;
-    const currentImageData = ctx.createImageData(width, height);
-    const currentData = currentImageData.data;
+    // Use recorded particles if they exist, otherwise generate a "Swarm"
+    let particles = APP.pixelParticles;
+    const isSwarm = particles.length === 0;
+
+    if (isSwarm) {
+        // Generate a swarm for smudge/sort/mask distortions
+        // We'll sample 10,000 points and have them "fly" to their spots
+        const step = Math.max(1, Math.floor((width * height) / 8000));
+        const orig = APP.pixelOriginalData.data;
+        for (let y = 0; y < height; y += Math.sqrt(step)) {
+            for (let x = 0; x < width; x += Math.sqrt(step)) {
+                const i = (Math.floor(y) * width + Math.floor(x)) * 4;
+                if (orig[i + 3] > 0) {
+                    particles.push({
+                        color: `rgba(${orig[i]},${orig[i + 1]},${orig[i + 2]},${orig[i + 3] / 255})`,
+                        // Start slightly offset/randomized for "gathering" look
+                        cur: { x: x + (Math.random() - 0.5) * 100, y: y + (Math.random() - 0.5) * 100 },
+                        tar: { x: x, y: y }
+                    });
+                }
+            }
+        }
+    }
 
     APP.isRunning = true;
-    const duration = 3000;
+    const duration = 2500;
     const startTime = performance.now();
 
     function frame(time) {
         const elapsed = time - startTime;
         const progress = Math.min(elapsed / duration, 1);
 
-        // Cubic Ease Out for a smoother/softer feel
+        // Cubic Ease Out
         const ease = 1 - Math.pow(1 - progress, 3);
 
-        for (let i = 0; i < startData.length; i++) {
-            currentData[i] = startData[i] + (targetData[i] - startData[i]) * ease;
-        }
+        ctx.clearRect(0, 0, width, height);
 
-        ctx.putImageData(currentImageData, 0, 0);
+        // Performance optimization: we use fillRect for particles
+        // For large images, this is faster than full-canvas manipulation for sparse data
+        for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            const x = p.cur.x + (p.tar.x - p.cur.x) * ease;
+            const y = p.cur.y + (p.tar.y - p.cur.y) * ease;
+
+            ctx.fillStyle = p.color;
+            ctx.fillRect(x, y, 2, 2);
+        }
 
         if (progress < 1) {
             requestAnimationFrame(frame);
         } else {
             APP.isRunning = false;
+            APP.pixelParticles = []; // Clear particles
+            // Final snap to original data for perfect pixel match
+            ctx.putImageData(APP.pixelOriginalData, 0, 0);
             setStatus(t('status_finished'));
         }
     }
@@ -1369,10 +1414,26 @@ function animatePixelScanHeal() {
     if (APP.isRunning || !APP.pixelOriginalData) return;
     const ctx = elPixelCanvas.getContext('2d');
     const width = elPixelCanvas.width, height = elPixelCanvas.height;
-    const startData = ctx.getImageData(0, 0, width, height).data;
-    const targetData = APP.pixelOriginalData.data;
-    const currentImageData = ctx.createImageData(width, height);
-    const currentData = currentImageData.data;
+
+    // Use swarm-like particle generation for the scan effect
+    const particles = [];
+    const step = Math.max(1, Math.floor((width * height) / 8000));
+    const orig = APP.pixelOriginalData.data;
+
+    for (let y = 0; y < height; y += Math.sqrt(step)) {
+        for (let x = 0; x < width; x += Math.sqrt(step)) {
+            const i = (Math.floor(y) * width + Math.floor(x)) * 4;
+            if (orig[i + 3] > 0) {
+                particles.push({
+                    color: `rgba(${orig[i]},${orig[i + 1]},${orig[i + 2]},${orig[i + 3] / 255})`,
+                    // Scan starts from random scattered positions or just the top
+                    cur: { x: x + (Math.random() - 0.5) * 50, y: y - 100 }, // Fall from top
+                    tar: { x: x, y: y },
+                    delay: y / height // Normalized arrival delay
+                });
+            }
+        }
+    }
 
     APP.isRunning = true;
     const duration = 2500;
@@ -1382,27 +1443,27 @@ function animatePixelScanHeal() {
         const elapsed = time - startTime;
         const globalProgress = Math.min(elapsed / duration, 1);
 
-        for (let y = 0; y < height; y++) {
-            // Sequential progress: pixels at the top finish first
-            // Adjust the offset (1.5) and subtraction (y/height) for wave speed/feel
-            const rowProgress = Math.min(Math.max(globalProgress * 2.0 - (y / height), 0), 1);
-            const ease = 1 - Math.pow(1 - rowProgress, 3);
+        ctx.clearRect(0, 0, width, height);
 
-            for (let x = 0; x < width; x++) {
-                const i = (y * width + x) * 4;
-                currentData[i] = startData[i] + (targetData[i] - startData[i]) * ease;
-                currentData[i + 1] = startData[i + 1] + (targetData[i + 1] - startData[i + 1]) * ease;
-                currentData[i + 2] = startData[i + 2] + (targetData[i + 2] - startData[i + 2]) * ease;
-                currentData[i + 3] = startData[i + 3] + (targetData[i + 3] - startData[i + 3]) * ease;
-            }
+        for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
+            // Particle starts moving after its specific delay
+            // We scale the individual progress to make it look like a wave
+            const pProgress = Math.min(Math.max(globalProgress * 2.0 - p.delay, 0), 1);
+            const ease = 1 - Math.pow(1 - pProgress, 3);
+
+            const x = p.cur.x + (p.tar.x - p.cur.x) * ease;
+            const y = p.cur.y + (p.tar.y - p.cur.y) * ease;
+
+            ctx.fillStyle = p.color;
+            ctx.fillRect(x, y, 2, 2);
         }
-
-        ctx.putImageData(currentImageData, 0, 0);
 
         if (globalProgress < 1) {
             requestAnimationFrame(frame);
         } else {
             APP.isRunning = false;
+            ctx.putImageData(APP.pixelOriginalData, 0, 0);
             setStatus(t('status_finished'));
         }
     }
