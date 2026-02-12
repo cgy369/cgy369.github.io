@@ -22,6 +22,7 @@ const TRANSLATIONS = {
         tab_maze: "Maze Gen",
         tab_gameoflife: "Game of Life",
         tab_tsp: "TSP",
+        tab_huffman: "Huffman Coding",
         label_mode: "Mode:",
         mode_code: "Code",
         mode_game: "Game",
@@ -56,6 +57,7 @@ const TRANSLATIONS = {
         tab_maze: "미로 생성 (Maze)",
         tab_gameoflife: "생명 게임 (GoL)",
         tab_tsp: "외판원 문제 (TSP)",
+        tab_huffman: "허프만 코딩 (압축)",
         label_mode: "모드:",
         mode_code: "코딩",
         mode_game: "게임",
@@ -280,9 +282,9 @@ const APP = {
     // GoL State
     golRunning: false,
 
-    // TSP
-    tspCities: [],
-    tspPath: []
+    // Huffman
+    huffmanNodes: [],
+    huffmanSelection: []
 };
 
 // --- DOM Elements ---
@@ -295,6 +297,7 @@ const langSelect = document.getElementById('langSelect');
 const elViz = document.getElementById('visualizerContainer');
 const elGrid = document.getElementById('gridContainer');
 const elCanvas = document.getElementById('tspCanvas');
+const elHuffmanCanvas = document.getElementById('huffmanCanvas');
 
 // Controls
 const controls = {
@@ -302,7 +305,8 @@ const controls = {
     pathfinding: document.getElementById('controls_pathfinding'),
     maze: document.getElementById('controls_maze'),
     gameoflife: document.getElementById('controls_gameoflife'),
-    tsp: document.getElementById('controls_tsp')
+    tsp: document.getElementById('controls_tsp'),
+    huffman: document.getElementById('controls_huffman')
 };
 
 // Sorting DOM
@@ -341,6 +345,10 @@ const btnGolRandom = document.getElementById('btnGolRandom');
 const btnTspRun = document.getElementById('btnTspRun');
 const btnTspNew = document.getElementById('btnTspNew');
 
+// Huffman DOM
+const btnHuffmanGen = document.getElementById('btnHuffmanGen');
+const btnHuffmanRun = document.getElementById('btnHuffmanRun');
+
 // Pathfinding DOM
 const btnPfRun = document.getElementById('btnPfRun');
 const btnPfReset = document.getElementById('btnPfReset');
@@ -353,14 +361,17 @@ function init() {
     generateGrid();
     switchModule('sorting');
     resizeCanvas();
+    initHuffman();
     window.addEventListener('resize', resizeCanvas);
 }
 
 function resizeCanvas() {
     const rect = elCanvas.parentElement.getBoundingClientRect();
-    elCanvas.width = rect.width;
-    elCanvas.height = rect.height - 40;
+    const w = rect.width, h = rect.height - 40;
+    elCanvas.width = w; elCanvas.height = h;
+    elHuffmanCanvas.width = w; elHuffmanCanvas.height = h;
     if (APP.module === 'tsp') drawTSP();
+    if (APP.module === 'huffman') drawHuffman();
 }
 
 // --- Module Switching (Select Box) ---
@@ -400,6 +411,11 @@ function switchModule(modName) {
             updatePathfindingNodes();
         } else if (modName === 'maze') {
             elEditor.parentElement.style.display = 'none';
+        } else if (modName === 'huffman') {
+            elHuffmanCanvas.classList.remove('hidden');
+            elEditor.parentElement.style.display = 'none';
+            resizeCanvas();
+            generateHuffman();
         } else if (modName === 'gameoflife') {
             elEditor.parentElement.style.display = 'none';
             generateGrid(CONFIG.gridSize);
@@ -669,6 +685,128 @@ async function solveTSP() {
     APP.isRunning = false;
     btnStop.disabled = true;
 }
+function solveTSP() { solveTSPAsync(); } // Simple wrapper for existing code structure
+
+// --- HUFFMAN MODULE ---
+function initHuffman() {
+    btnHuffmanGen.onclick = generateHuffman;
+    btnHuffmanRun.onclick = runHuffman;
+    elHuffmanCanvas.onclick = handleHuffmanClick;
+}
+
+function generateHuffman() {
+    const chars = "ABCDEFGHIJ".split("");
+    APP.huffmanNodes = chars.slice(0, 6 + Math.floor(Math.random() * 4)).map((char, i) => ({
+        id: Math.random(), char, freq: Math.floor(Math.random() * 20) + 1,
+        x: 0, y: 0, left: null, right: null
+    }));
+    APP.huffmanSelection = [];
+    layoutHuffmanNodes();
+    drawHuffman();
+}
+
+function layoutHuffmanNodes() {
+    const n = APP.huffmanNodes.length;
+    const w = elHuffmanCanvas.width, h = elHuffmanCanvas.height;
+    APP.huffmanNodes.forEach((node, i) => {
+        if (!node.x) {
+            node.x = (w / (n + 1)) * (i + 1);
+            node.y = h - 100;
+        }
+    });
+}
+
+function drawHuffman() {
+    const ctx = elHuffmanCanvas.getContext('2d');
+    ctx.clearRect(0, 0, elHuffmanCanvas.width, elHuffmanCanvas.height);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+
+    // Draw Connections
+    ctx.strokeStyle = '#334155'; ctx.lineWidth = 2;
+    const drawLines = (node) => {
+        if (node.left) {
+            ctx.beginPath(); ctx.moveTo(node.x, node.y); ctx.lineTo(node.left.x, node.left.y); ctx.stroke();
+            drawLines(node.left);
+        }
+        if (node.right) {
+            ctx.beginPath(); ctx.moveTo(node.x, node.y); ctx.lineTo(node.right.x, node.right.y); ctx.stroke();
+            drawLines(node.right);
+        }
+    };
+    APP.huffmanNodes.forEach(drawLines);
+
+    // Draw Nodes
+    APP.huffmanNodes.forEach(drawNodesRecursive);
+}
+
+function drawNodesRecursive(node) {
+    const ctx = elHuffmanCanvas.getContext('2d');
+    if (node.left) drawNodesRecursive(node.left);
+    if (node.right) drawNodesRecursive(node.right);
+
+    const isSelected = APP.huffmanSelection.includes(node);
+    ctx.beginPath(); ctx.arc(node.x, node.y, 25, 0, Math.PI * 2);
+    ctx.fillStyle = isSelected ? '#3b82f6' : (node.char ? '#22c55e' : '#64748b');
+    ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px sans-serif';
+    ctx.fillText(node.char || "", node.x, node.y - 5);
+    ctx.font = '12px sans-serif';
+    ctx.fillText(node.freq, node.x, node.y + 10);
+}
+
+function handleHuffmanClick(e) {
+    if (APP.sortMode !== 'game' || APP.module !== 'huffman') return;
+    const rect = elHuffmanCanvas.getBoundingClientRect();
+    const x = e.clientX - rect.left, y = e.clientY - rect.top;
+
+    const clickedNode = APP.huffmanNodes.find(n => Math.hypot(n.x - x, n.y - y) < 30);
+    if (clickedNode) {
+        if (APP.huffmanSelection.includes(clickedNode)) {
+            APP.huffmanSelection = APP.huffmanSelection.filter(n => n !== clickedNode);
+        } else {
+            APP.huffmanSelection.push(clickedNode);
+            if (APP.huffmanSelection.length === 2) {
+                mergeHuffmanNodes(APP.huffmanSelection[0], APP.huffmanSelection[1]);
+                APP.huffmanSelection = [];
+            }
+        }
+        drawHuffman();
+    }
+}
+
+function mergeHuffmanNodes(n1, n2) {
+    const newNode = {
+        id: Math.random(), freq: n1.freq + n2.freq,
+        left: n1, right: n2,
+        x: (n1.x + n2.x) / 2, y: Math.min(n1.y, n2.y) - 80
+    };
+    APP.huffmanNodes = APP.huffmanNodes.filter(n => n !== n1 && n !== n2);
+    APP.huffmanNodes.push(newNode);
+    if (APP.huffmanNodes.length === 1) setStatus(t('status_finished'));
+}
+
+async function runHuffman() {
+    if (APP.isRunning || APP.sortMode === 'game') return;
+    APP.isRunning = true; APP.shouldStop = false;
+    btnStop.disabled = false;
+
+    while (APP.huffmanNodes.length > 1 && !APP.shouldStop) {
+        APP.huffmanNodes.sort((a, b) => a.freq - b.freq);
+        const n1 = APP.huffmanNodes[0], n2 = APP.huffmanNodes[1];
+        APP.huffmanSelection = [n1, n2];
+        drawHuffman();
+        await sleep(1000);
+        if (APP.shouldStop) break;
+        mergeHuffmanNodes(n1, n2);
+        APP.huffmanSelection = [];
+        drawHuffman();
+        await sleep(500);
+    }
+    APP.isRunning = false; btnStop.disabled = true;
+}
+
 function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
 
 // --- GRID MODULES SETUP ---
@@ -692,11 +830,12 @@ function generateGrid(size = CONFIG.gridSize) {
         APP.grid.push(row);
     }
 
-    // Always update Start/End to match grid size
+    // Use furthest odd indices for maze-compatible start/end
     APP.pfStart = { r: 1, c: 1 };
-    APP.pfEnd = { r: size - 2, c: size - 2 };
+    let lastOdd = size % 2 === 0 ? size - 3 : size - 2;
+    APP.pfEnd = { r: lastOdd, c: lastOdd };
 
-    if (APP.module === 'pathfinding') {
+    if (APP.module === 'pathfinding' || APP.module === 'maze') {
         updatePathfindingNodes();
         addPathfindingListeners();
     } else if (APP.module === 'gameoflife') {
@@ -744,8 +883,27 @@ async function generateMaze() {
             current = stack.pop();
         }
     }
+
+    // Punch holes to create multiple paths (Cycles)
+    const punchCount = Math.floor(CONFIG.gridSize * 1.5);
+    for (let i = 0; i < punchCount; i++) {
+        let r = Math.floor(Math.random() * (CONFIG.gridSize - 2)) + 1;
+        let c = Math.floor(Math.random() * (CONFIG.gridSize - 2)) + 1;
+        if (APP.grid[r][c].isWall) {
+            APP.grid[r][c].isWall = false;
+            APP.grid[r][c].div.classList.remove('wall');
+        }
+    }
+
+    // Guarantee Start and End are Path
+    const s = APP.grid[APP.pfStart.r][APP.pfStart.c];
+    const e = APP.grid[APP.pfEnd.r][APP.pfEnd.c];
+    if (s) { s.isWall = false; s.div.classList.remove('wall'); }
+    if (e) { e.isWall = false; e.div.classList.remove('wall'); }
+
     APP.isRunning = false;
     btnStop.disabled = true;
+    updatePathfindingNodes();
 }
 
 // --- GAME OF LIFE ---
@@ -896,7 +1054,18 @@ btnPfReset.addEventListener('click', () => {
     generateGrid(CONFIG.gridSize);
 });
 
+function clearPathVisuals() {
+    APP.grid.forEach(row => row.forEach(node => {
+        node.div.classList.remove('visited', 'path');
+        delete node.parent;
+        delete node.g;
+        delete node.f;
+    }));
+}
+
 btnPfRun.addEventListener('click', async () => {
+    if (APP.isRunning) return;
+    clearPathVisuals();
     const code = elEditor.value;
     // Context for Pathfinding Code
     const startNode = APP.grid[APP.pfStart.r][APP.pfStart.c];

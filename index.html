@@ -30,6 +30,7 @@
                     <option value="pathfinding" data-i18n="tab_pathfinding">Pathfinding</option>
                     <option value="gameoflife" data-i18n="tab_gameoflife">Game of Life</option>
                     <option value="tsp" data-i18n="tab_tsp">TSP</option>
+                    <option value="huffman" data-i18n="tab_huffman">Huffman</option>
                 </select>
 
                 <select id="langSelect" style="margin-left: 10px; padding: 4px; border-radius: 4px;">
@@ -136,6 +137,12 @@
                     <button id="btnTspRun" class="btn primary">Solve (Nearest)</button>
                     <button id="btnTspNew" class="btn secondary">New Cities</button>
                 </div>
+
+                <!-- Huffman Controls -->
+                <div id="controls_huffman" class="module-controls hidden">
+                    <button id="btnHuffmanGen" class="btn secondary">Generate</button>
+                    <button id="btnHuffmanRun" class="btn primary">Run</button>
+                </div>
             </div>
         </header>
 
@@ -186,6 +193,9 @@
 
                 <!-- TSP Canvas -->
                 <canvas id="tspCanvas" class="hidden"></canvas>
+
+                <!-- Huffman Canvas -->
+                <canvas id="huffmanCanvas" class="hidden"></canvas>
             </section>
         </main>
 
