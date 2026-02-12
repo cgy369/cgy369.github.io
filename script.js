@@ -1060,13 +1060,18 @@ const pixelTool = document.getElementById('pixelTool');
 const pixelBrushSize = document.getElementById('pixelBrushSize');
 const pixelColor = document.getElementById('pixelColor');
 const pixelUpload = document.getElementById('pixelUpload');
+const btnPixelHeal = document.getElementById('btnPixelHeal');
 const btnPixelReset = document.getElementById('btnPixelReset');
 
 function initPixelMaster() {
     pixelUpload.addEventListener('change', handlePixelUpload);
     btnPixelReset.addEventListener('click', resetPixelImage);
+    btnPixelHeal.addEventListener('click', animatePixelHeal);
     pixelTool.addEventListener('change', (e) => APP.pixelTool = e.target.value);
     pixelBrushSize.addEventListener('input', (e) => APP.pixelBrushSize = parseInt(e.target.value));
+
+    // Random Image Default
+    loadRandomPixelImage();
 
     elPixelCanvas.addEventListener('mousedown', (e) => {
         APP.isMouseDown = true;
@@ -1075,17 +1080,21 @@ function initPixelMaster() {
     });
 
     elPixelCanvas.addEventListener('mousemove', (e) => {
-        if (!APP.isMouseDown || APP.pixelTool !== 'smudge') return;
+        if (!APP.isMouseDown) return;
+
         const rect = elPixelCanvas.getBoundingClientRect();
         const x = Math.floor((e.clientX - rect.left) * (elPixelCanvas.width / rect.width));
         const y = Math.floor((e.clientY - rect.top) * (elPixelCanvas.height / rect.height));
 
-        const dx = x - APP.lastMousePos.x;
-        const dy = y - APP.lastMousePos.y;
-
-        if (Math.hypot(dx, dy) > 1) {
-            smudgePixels(x, y, dx, dy);
-            updateLastMousePos(e);
+        if (APP.pixelTool === 'smudge') {
+            const dx = x - APP.lastMousePos.x;
+            const dy = y - APP.lastMousePos.y;
+            if (Math.hypot(dx, dy) > 1) {
+                smudgePixels(x, y, dx, dy);
+                updateLastMousePos(e);
+            }
+        } else if (APP.pixelTool === 'sand') {
+            scatterSand(x, y);
         }
     });
 }
@@ -1203,6 +1212,90 @@ function smudgePixels(centerX, centerY, dx, dy) {
         }
     }
     ctx.putImageData(imageData, 0, 0);
+}
+
+function scatterSand(mx, my) {
+    if (!APP.pixelOriginalData) return;
+    const ctx = elPixelCanvas.getContext('2d');
+    const radius = APP.pixelBrushSize;
+    const density = 20; // Grains per move
+    const origData = APP.pixelOriginalData.data;
+    const w = elPixelCanvas.width;
+    const h = elPixelCanvas.height;
+
+    for (let i = 0; i < density; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const r = Math.sqrt(Math.random()) * radius;
+        const sx = Math.floor(mx + Math.cos(angle) * r);
+        const sy = Math.floor(my + Math.sin(angle) * r);
+
+        if (sx >= 0 && sx < w && sy >= 0 && sy < h) {
+            // Pick color from the same location in the original image
+            const idx = (sy * w + sx) * 4;
+            const r = origData[idx], g = origData[idx + 1], b = origData[idx + 2], a = origData[idx + 3];
+
+            // Draw a grain (slightly offset/scattered)
+            ctx.fillStyle = `rgba(${r},${g},${b},${a / 255})`;
+            ctx.fillRect(sx, sy, 2, 2);
+        }
+    }
+}
+
+function loadRandomPixelImage() {
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.onload = () => {
+        const ctx = elPixelCanvas.getContext('2d');
+        const ratio = Math.min(elPixelCanvas.width / img.width, elPixelCanvas.height / img.height);
+        const w = img.width * ratio, h = img.height * ratio;
+        elPixelCanvas.width = w; elPixelCanvas.height = h;
+        ctx.drawImage(img, 0, 0, w, h);
+        APP.pixelOriginalData = ctx.getImageData(0, 0, w, h);
+        setStatus(t('status_finished'));
+    };
+    // Random high quality image from picsum
+    img.src = `https://picsum.photos/800/600?random=${Math.floor(Math.random() * 1000)}`;
+    setStatus(t('status_running'));
+}
+
+function animatePixelHeal() {
+    if (APP.isRunning || !APP.pixelOriginalData) return;
+    const ctx = elPixelCanvas.getContext('2d');
+    const width = elPixelCanvas.width;
+    const height = elPixelCanvas.height;
+
+    const startData = ctx.getImageData(0, 0, width, height).data;
+    const targetData = APP.pixelOriginalData.data;
+    const currentImageData = ctx.createImageData(width, height);
+    const currentData = currentImageData.data;
+
+    APP.isRunning = true;
+    const duration = 3000;
+    const startTime = performance.now();
+
+    function frame(time) {
+        const elapsed = time - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // Cubic Ease Out for a smoother/softer feel
+        const ease = 1 - Math.pow(1 - progress, 3);
+
+        for (let i = 0; i < startData.length; i++) {
+            currentData[i] = startData[i] + (targetData[i] - startData[i]) * ease;
+        }
+
+        ctx.putImageData(currentImageData, 0, 0);
+
+        if (progress < 1) {
+            requestAnimationFrame(frame);
+        } else {
+            APP.isRunning = false;
+            setStatus(t('status_finished'));
+        }
+    }
+
+    setStatus(t('status_running'));
+    requestAnimationFrame(frame);
 }
 
 // Start
