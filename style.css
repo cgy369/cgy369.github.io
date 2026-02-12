@@ -1,6 +1,7 @@
 :root {
     --bg-dark: #0f172a;
     --bg-panel: #1e293b;
+    --bg-sidebar: #020617;
     --text-main: #e2e8f0;
     --text-muted: #94a3b8;
     --primary: #3b82f6;
@@ -38,7 +39,8 @@ body {
 
 .app-container {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    /* Sidebar + Main */
     height: 100%;
 }
 
@@ -46,21 +48,19 @@ body {
     display: none !important;
 }
 
-/* Toolbar */
-.toolbar {
-    background-color: var(--bg-panel);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 1rem 2rem;
+/* --- SIDEBAR --- */
+.sidebar {
+    width: 240px;
+    background-color: var(--bg-sidebar);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+    flex-direction: column;
+    padding: 1.5rem;
+    flex-shrink: 0;
 }
 
 .brand {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
+    margin-bottom: 2rem;
 }
 
 .brand h1 {
@@ -72,39 +72,85 @@ body {
     color: var(--primary);
 }
 
-.module-tabs {
+.module-list {
     display: flex;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
-    padding: 2px;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
 }
 
-.tab-btn {
+.divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0.5rem 0;
+}
+
+.nav-btn {
     background: transparent;
     border: none;
-    padding: 6px 12px;
-    font-size: 0.9rem;
+    padding: 0.8rem 1rem;
+    font-size: 0.95rem;
     color: var(--text-muted);
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    transition: all 0.2s;
 }
 
-.tab-btn.active {
+.nav-btn .icon {
+    font-size: 1.2rem;
+    opacity: 0.7;
+}
+
+.nav-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+}
+
+.nav-btn.active {
     background-color: var(--primary);
     color: white;
-    font-weight: 600;
+    font-weight: 500;
 }
 
-.controls {
+.nav-btn.active .icon {
+    opacity: 1;
+}
+
+.bottom-settings {
+    margin-top: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 1rem;
+}
+
+/* --- MAIN CONTENT --- */
+.main-content {
+    flex: 1;
     display: flex;
-    gap: 2rem;
-    align-items: center;
+    flex-direction: column;
+    min-width: 0;
 }
 
+/* Toolbar (Top Bar) */
+.toolbar {
+    background-color: var(--bg-panel);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.8rem 1.5rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Controls */
 .module-controls {
     display: flex;
-    gap: 2rem;
+    gap: 1.5rem;
     align-items: center;
+    width: 100%;
 }
 
 .control-group {
@@ -114,14 +160,16 @@ body {
 }
 
 .control-group label {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: var(--text-muted);
+    white-space: nowrap;
 }
 
 /* Buttons & Inputs */
 select,
-button {
-    padding: 0.5rem 1rem;
+button,
+input[type="number"] {
+    padding: 0.4rem 0.8rem;
     border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.05);
@@ -129,27 +177,22 @@ button {
     cursor: pointer;
     font-family: var(--font-sans);
     transition: all 0.2s;
+    font-size: 0.9rem;
 }
 
 /* Dropdown Menu Styling */
 select {
-    background-color: var(--bg-panel);
-    /* Ensure solid background for options */
+    background-color: var(--bg-dark);
 }
 
 select option {
     background-color: var(--bg-dark);
     color: var(--text-main);
-    padding: 10px;
-    /* Note: limited support in some browsers */
 }
 
 select optgroup {
-    background-color: var(--bg-panel);
+    background-color: var(--bg-dark);
     color: var(--accent);
-    /* Make group labels distinct */
-    font-weight: 700;
-    font-style: normal;
 }
 
 button:hover:not(:disabled) {
@@ -175,6 +218,16 @@ button:disabled {
     border-color: var(--danger);
 }
 
+.btn.secondary {
+    background-color: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn.sm {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.8rem;
+}
+
 /* Workspace */
 .workspace {
     flex: 1;
@@ -187,14 +240,13 @@ button:disabled {
     display: flex;
     flex-direction: column;
     min-width: 0;
-    /* Prevent flex blowouts */
 }
 
 .editor-pane {
     border-right: 1px solid rgba(255, 255, 255, 0.1);
     background-color: #1a1a1a;
     position: relative;
-    /* For overlay positioning */
+    max-width: 40%;
 }
 
 .viz-pane {
@@ -202,6 +254,8 @@ button:disabled {
     padding: 1rem;
     display: flex;
     flex-direction: column;
+    flex: 1;
+    position: relative;
 }
 
 .pane-header {
@@ -214,18 +268,12 @@ button:disabled {
     justify-content: space-between;
 }
 
-.pane-header code {
-    font-family: var(--font-mono);
-    color: var(--accent);
-}
-
-/* Code Editor */
 #codeEditor {
     flex: 1;
     background-color: transparent;
     color: var(--text-main);
     font-family: var(--font-mono);
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.5;
     padding: 1rem;
     border: none;
@@ -233,21 +281,19 @@ button:disabled {
     outline: none;
 }
 
-/* Visualizer */
+/* Visualizer Containers */
 #visualizerContainer {
     flex: 1;
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    /* gap: 2px; -- Removed to prevent overflow with 100% width sum */
-    padding-top: 2rem;
+    padding-top: 1rem;
 }
 
 .bar {
     background-color: var(--bar-default);
-    /* width set dynamically */
-    margin: 0 1px;
-    /* Small margin instead of gap */
+    margin: 0;
+    /* Handled by JS */
     border-top-left-radius: 4px;
     border-top-right-radius: 4px;
     transition: height 0.1s ease;
@@ -261,18 +307,16 @@ button:disabled {
     background-color: var(--bar-sorted);
 }
 
-/* Pathfinding Grid */
+/* Grid Container */
 #gridContainer {
     flex: 1;
     display: grid;
-    /* Columns will be set in JS: repeat(20, 1fr) */
     gap: 1px;
     padding: 1rem;
     background: #0f172a;
     align-self: center;
     justify-self: center;
     aspect-ratio: 1;
-    /* Keep square */
     max-height: 100%;
 }
 
@@ -280,11 +324,6 @@ button:disabled {
     background-color: var(--node-empty);
     border: 1px solid rgba(255, 255, 255, 0.05);
     cursor: pointer;
-    transition: background-color 0.1s;
-}
-
-.node:hover {
-    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .node.wall {
@@ -310,6 +349,15 @@ button:disabled {
     animation: pop 0.2s ease-out;
 }
 
+/* TSP Canvas */
+#tspCanvas {
+    background-color: #111;
+    border: 1px solid #333;
+    align-self: center;
+    cursor: crosshair;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
 @keyframes pop {
     0% {
         transform: scale(0.5);
@@ -325,9 +373,7 @@ button:disabled {
 /* Footer / Ad */
 .ad-footer {
     height: 100px;
-    /* Fixed height */
     flex: 0 0 100px;
-    /* Do not grow, Do not shrink, Fixed basis */
     background-color: var(--bg-panel);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
@@ -335,55 +381,6 @@ button:disabled {
     align-items: center;
     z-index: 50;
     overflow: hidden;
-}
-
-.ad-container {
-    width: 100%;
-    max-width: 728px;
-    height: 90px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
-    /* Cut off anything extra */
-}
-
-/* --- Interactive Mode Styles (Shared) --- */
-/* Mode Toggle */
-.mode-toggle {
-    background: rgba(0, 0, 0, 0.2);
-    padding: 0.25rem;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.toggle-switch {
-    display: flex;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
-    padding: 2px;
-}
-
-.toggle-switch input[type="radio"] {
-    display: none;
-}
-
-.toggle-switch label {
-    padding: 0.3rem 0.6rem;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    transition: all 0.2s;
-    user-select: none;
-}
-
-.toggle-switch input[type="radio"]:checked+label {
-    background-color: var(--primary);
-    color: white;
-    font-weight: 600;
 }
 
 /* Game Overlay */
@@ -423,13 +420,6 @@ button:disabled {
     color: var(--accent);
 }
 
-.game-content p {
-    font-size: 1rem;
-    color: var(--text-muted);
-    margin-bottom: 1.5rem;
-}
-
-/* Game Controls Panel */
 .game-controls {
     background: var(--bg-panel);
     padding: 1.5rem;
@@ -438,75 +428,40 @@ button:disabled {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     width: 100%;
     text-align: center;
-    transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
 .game-controls.hidden {
-    opacity: 0;
-    transform: translateY(10px);
-    pointer-events: none;
+    display: none;
 }
 
-.current-step {
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
-    font-weight: 500;
-    color: var(--text-main);
-}
-
-.action-buttons {
+/* Checkbox Toggle */
+.checkbox-label {
     display: flex;
-    gap: 0.8rem;
-    justify-content: center;
-    margin-bottom: 0.8rem;
-}
-
-.btn.game-btn {
-    padding: 0.8rem 1.5rem;
-    font-size: 1rem;
-    min-width: 100px;
-    background-color: var(--primary);
-    border-color: var(--primary);
-    color: white;
-}
-
-.btn.game-btn.secondary {
-    background-color: transparent;
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-.btn.game-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.feedback {
-    min-height: 1.2rem;
+    align-items: center;
+    gap: 0.4rem;
     font-size: 0.9rem;
-    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-muted);
 }
 
-.feedback.correct {
-    color: var(--success);
+.mode-toggle {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 2px 4px;
+    border-radius: 6px;
 }
 
-.feedback.wrong {
-    color: var(--danger);
-    animation: shake 0.4s ease-in-out;
+.toggle-switch {
+    display: flex;
 }
 
-@keyframes shake {
+.toggle-switch label {
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
 
-    0%,
-    100% {
-        transform: translateX(0);
-    }
-
-    25% {
-        transform: translateX(-4px);
-    }
-
-    75% {
-        transform: translateX(4px);
-    }
+.toggle-switch input:checked+label {
+    background: var(--primary);
+    color: white;
 }
