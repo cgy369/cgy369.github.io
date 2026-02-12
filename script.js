@@ -14,21 +14,137 @@ const CONFIG = {
     gridSize: 20
 };
 
+// --- Translations ---
+const TRANSLATIONS = {
+    en: {
+        tab_sorting: "Sorting",
+        tab_pathfinding: "Pathfinding",
+        label_mode: "Mode:",
+        mode_code: "Code",
+        mode_game: "Game",
+        label_algo: "Algo:",
+        opt_simple: "Simple (O(n²))",
+        algo_bubble: "Bubble Sort",
+        algo_selection: "Selection Sort",
+        algo_insertion: "Insertion Sort",
+        algo_cocktail: "Cocktail Shaker Sort",
+        opt_efficient: "Efficient (O(n log n))",
+        algo_quick: "Quick Sort",
+        algo_merge: "Merge Sort",
+        algo_heap: "Heap Sort",
+        opt_curious: "Special / Fun",
+        algo_radix: "Radix Sort (LSD)",
+        algo_bogo: "Bogo Sort (The Worst)",
+        opt_custom: "User Defined",
+        algo_custom: "Custom Script",
+        btn_shuffle: "Shuffle",
+        btn_run: "Run",
+        btn_stop: "Stop",
+        label_size: "Size:",
+        label_speed: "Speed:",
+        label_img_mode: "Image Mode",
+        btn_reset: "Reset",
+        game_title: "Interactive Sort",
+        game_instruction: "Select an algorithm and click Run to start!",
+        pane_visualizer: "Visualizer",
+        status_ready: "Ready",
+        status_sorting: "Ready (Sorting)",
+        status_image: "Ready (Image Sort)",
+        status_running: "Running...",
+        status_finished: "Finished!",
+        status_stopped: "Stopped.",
+        status_victory: "Victory!",
+        editor_title_js: "JavaScript Editor",
+        editor_sub_js: "Available: <code>data[]</code>, <code>await swap(i,j)</code>",
+        editor_title_game: "Interactive Mode",
+        editor_sub_game: "You are the CPU!",
+        editor_title_pf: "JS Editor (Pathfinding)",
+        editor_sub_pf: "Available: <code>startNode</code>, <code>endNode</code>",
+        game_swap: "Swap",
+        game_pass: "Pass",
+        game_yes: "Yes",
+        game_no: "No",
+        msg_correct: "Correct!",
+        msg_wrong: "Wrong!",
+        prompt_bubble: "Compare <b>[{0}]</b> and <b>[{1}]</b>.<br>Should we swap?",
+        prompt_bubble_img: "Is Left Image Slice > Right Image Slice? (Index {0} vs {1})",
+        prompt_selection: "Check if Right is smaller?"
+    },
+    ko: {
+        tab_sorting: "정렬 (Sorting)",
+        tab_pathfinding: "길찾기 (Pathfinding)",
+        label_mode: "모드:",
+        mode_code: "코딩",
+        mode_game: "게임",
+        label_algo: "알고리즘:",
+        opt_simple: "단순 정렬 (O(n²))",
+        algo_bubble: "버블 정렬 (Bubble)",
+        algo_selection: "선택 정렬 (Selection)",
+        algo_insertion: "삽입 정렬 (Insertion)",
+        algo_cocktail: "칵테일 정렬 (Cocktail)",
+        opt_efficient: "효율적 정렬 (O(n log n))",
+        algo_quick: "퀵 정렬 (Quick)",
+        algo_merge: "병합 정렬 (Merge)",
+        algo_heap: "힙 정렬 (Heap)",
+        opt_curious: "특수 / 재미",
+        algo_radix: "기수 정렬 (Radix)",
+        algo_bogo: "보고 정렬 (운빨)",
+        opt_custom: "사용자 정의",
+        algo_custom: "커스텀 스크립트",
+        btn_shuffle: "섞기",
+        btn_run: "실행",
+        btn_stop: "정지",
+        label_size: "크기:",
+        label_speed: "속도:",
+        label_img_mode: "이미지 모드",
+        btn_reset: "초기화",
+        game_title: "인터랙티브 정렬",
+        game_instruction: "알고리즘을 선택하고 실행을 눌러 시작하세요!",
+        pane_visualizer: "시각화 (Visualizer)",
+        status_ready: "준비",
+        status_sorting: "준비 (정렬)",
+        status_image: "준비 (이미지 정렬)",
+        status_running: "실행 중...",
+        status_finished: "완료!",
+        status_stopped: "정지됨.",
+        status_victory: "승리!",
+        editor_title_js: "자바스크립트 에디터",
+        editor_sub_js: "사용 가능: <code>data[]</code>, <code>await swap(i,j)</code>",
+        editor_title_game: "인터랙티브 모드",
+        editor_sub_game: "당신이 CPU가 되어 정렬해보세요!",
+        editor_title_pf: "JS 에디터 (길찾기)",
+        editor_sub_pf: "사용 가능: <code>startNode</code>, <code>endNode</code>",
+        game_swap: "교환 (Swap)",
+        game_pass: "패스 (Pass)",
+        game_yes: "네",
+        game_no: "아니요",
+        msg_correct: "정답입니다!",
+        msg_wrong: "틀렸습니다!",
+        prompt_bubble: "<b>[{0}]</b> 값과 <b>[{1}]</b> 값을 비교하세요.<br>교환해야 할까요?",
+        prompt_bubble_img: "왼쪽 이미지가 오른쪽보다 큰가요? (인덱스 {0} vs {1})",
+        prompt_selection: "오른쪽 값이 현재 최솟값보다 작은가요?"
+    }
+};
+
 // --- Global State ---
 const APP = {
     module: 'sorting', // 'sorting' | 'pathfinding'
     isRunning: false,
     shouldStop: false,
     delayMs: 50,
+    lang: 'ko', // Default language
+
     // Sorting State
     sortMode: 'code', // 'code' | 'game'
     sortData: [],
+
     // Image Mode State
     isImageMode: false,
-    imgSrc: 'https://picsum.photos/800/600', // Default image
+    imgSrc: 'https://picsum.photos/800/600',
+
     // Pathfinding State
     pfMode: 'code', // 'code' | 'game'
-    grid: [], // 20x20 array of node objects
+    grid: [],
     pfStart: { r: 2, c: 2 },
     pfEnd: { r: 17, c: 17 },
     isMousePressed: false,
@@ -42,6 +158,7 @@ const APP = {
 const elEditor = document.getElementById('codeEditor');
 const elStatus = document.getElementById('statusText');
 const tabs = document.querySelectorAll('.tab-btn');
+const langSelect = document.getElementById('langSelect');
 
 // Sorting
 const elViz = document.getElementById('visualizerContainer');
@@ -63,7 +180,6 @@ const btnPfRun = document.getElementById('btnPfRun');
 const btnPfStop = document.getElementById('btnPfStop');
 const btnPfReset = document.getElementById('btnPfReset');
 const pfAlgoSelect = document.getElementById('pfAlgoSelect');
-const pfModeRadios = document.getElementsByName('pfAppMode');
 
 // Game UI (Shared)
 const gameOverlay = document.getElementById('gameOverlay');
@@ -75,8 +191,46 @@ const feedbackMsg = document.getElementById('feedbackMsg');
 const gameInstruction = document.getElementById('gameInstruction');
 const editorTitle = document.getElementById('editorTitle');
 const editorSub = document.getElementById('editorSub');
+const vizTitle = document.getElementById('vizTitle');
 
-// --- Presets ---
+// --- Helper Functions ---
+function t(key) {
+    return TRANSLATIONS[APP.lang][key] || key;
+}
+
+function updateText() {
+    // Static Elements via IDs (Mapping ID -> Key)
+    // Would be better with data-i18n, but let's manual map for now if data-i18n is partial
+    // Or iterate data-i18n
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (TRANSLATIONS[APP.lang][key]) {
+            el.textContent = TRANSLATIONS[APP.lang][key];
+        }
+    });
+
+    // Also optgroups
+    document.querySelectorAll('optgroup[data-i18n-label]').forEach(el => {
+        const key = el.getAttribute('data-i18n-label');
+        if (TRANSLATIONS[APP.lang][key]) {
+            el.label = TRANSLATIONS[APP.lang][key];
+        }
+    });
+
+    // Update dynamic texts
+    updateEditorHeader();
+    if (APP.module === 'sorting') {
+        setStatus(APP.isImageMode ? t('status_image') + ` - Size: ${APP.sortData.length}` : t('status_sorting') + ` - Size: ${APP.sortData.length}`);
+    } else {
+        setStatus(t('status_ready'));
+    }
+}
+
+function setStatus(msg) {
+    elStatus.textContent = msg;
+}
+
+// --- Presets (Code) ---
 const SORT_PRESETS = {
     bubble: `// Bubble Sort
 for (let i = 0; i < data.length; i++) {
@@ -141,8 +295,6 @@ async function merge(l, m, r) {
 
     let i = 0, j = 0, k = l;
     while (i < n1 && j < n2) {
-        // Visualizing comparison requires accessing data[k], 
-        // but we are overwriting it. We just simulate swap-like delay.
         if (L[i] <= R[j]) {
             data[k] = L[i];
             i++;
@@ -150,7 +302,6 @@ async function merge(l, m, r) {
             data[k] = R[j];
             j++;
         }
-        // Force update visualization for index k
         renderArray([k], CONFIG.colors.active); 
         await sleep(APP.delayMs);
         k++;
@@ -313,7 +464,7 @@ await reconstructionPath(endNode);`,
     dfs: `// Depth-First Search
 const stack = [startNode];
 const visited = new Set();
-// visited.add(startNode.id); // Typically tracking on pop or push
+// visited.add(startNode.id);
 
 while(stack.length > 0) {
     const current = stack.pop();
@@ -334,7 +485,6 @@ while(stack.length > 0) {
 }
 await reconstructionPath(endNode);`,
     astar: `// A* Search
-// Priority Queue Helper
 class PriorityQueue {
     constructor() { this.items = []; }
     enqueue(element, priority) {
@@ -355,17 +505,14 @@ class PriorityQueue {
 
 const openSet = new PriorityQueue();
 openSet.enqueue(startNode, 0);
-
 const cameFrom = new Map();
 const gScore = new Map();
 const fScore = new Map();
 
 gScore.set(startNode.id, 0);
 fScore.set(startNode.id, heuristic(startNode, endNode));
-
 const visited = new Set();
 
-// Heuristic: Manhattan Distance
 function heuristic(a, b) {
     return Math.abs(a.r - b.r) + Math.abs(a.c - b.c);
 }
@@ -385,14 +532,12 @@ while (!openSet.isEmpty()) {
 
         const neighbors = getNeighbors(current);
         for (let neighbor of neighbors) {
-            const tempG = gScore.get(current.id) + 1; // Assuming weight 1
+            const tempG = gScore.get(current.id) + 1; 
             if (tempG < (gScore.get(neighbor.id) || Infinity)) {
                 cameFrom.set(neighbor.id, current);
                 gScore.set(neighbor.id, tempG);
                 fScore.set(neighbor.id, tempG + heuristic(neighbor, endNode));
-                
                 openSet.enqueue(neighbor, fScore.get(neighbor.id));
-                // neighbor.parent = current; // Not strictly needed with cameFrom map, but useful for debug
             }
         }
     }
@@ -403,32 +548,27 @@ while (!openSet.isEmpty()) {
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
-function setStatus(msg) {
-    elStatus.textContent = msg;
-}
+
 
 // --- INIT & TABS ---
 function init() {
     // Generate Sorting Data
     generateArray();
-
     // Generate Grid
     generateGrid();
-
     // Default View
     switchModule('sorting');
+    // Default Language
+    updateText();
 }
 
 function switchModule(modName) {
     APP.module = modName;
-
-    // Toggle Tabs
     tabs.forEach(t => {
         if (t.dataset.module === modName) t.classList.add('active');
         else t.classList.remove('active');
     });
 
-    // Toggle Containers & Controls
     if (modName === 'sorting') {
         elViz.classList.remove('hidden');
         elGrid.classList.add('hidden');
@@ -441,24 +581,33 @@ function switchModule(modName) {
         elGrid.classList.remove('hidden');
         controlsSorting.classList.add('hidden');
         controlsPathfinding.classList.remove('hidden');
-        editorTitle.textContent = "JS Editor (Pathfinding)";
-        editorSub.innerHTML = "Available: <code>startNode</code>, <code>endNode</code>, <code>getNeighbors(node)</code>, <code>await visit(node)</code>";
-        elEditor.value = PF_PRESETS[pfAlgoSelect.value];
+        updateEditorHeader();
+        elEditor.value = PF_PRESETS[pfAlgoSelect.value] || "";
     }
 }
 
 function updateEditorHeader() {
-    if (APP.sortMode === 'game') {
-        editorTitle.textContent = "Interactive Mode";
-        editorSub.textContent = "You are the CPU!";
+    if (APP.module === 'sorting') {
+        if (APP.sortMode === 'game') {
+            editorTitle.textContent = t('editor_title_game');
+            editorSub.textContent = t('editor_sub_game');
+        } else {
+            editorTitle.textContent = t('editor_title_js');
+            editorSub.innerHTML = t('editor_sub_js');
+        }
     } else {
-        editorTitle.textContent = "JavaScript Editor";
-        editorSub.innerHTML = "Available: <code>data[]</code>, <code>await swap(i,j)</code>";
+        editorTitle.textContent = t('editor_title_pf');
+        editorSub.innerHTML = t('editor_sub_pf');
     }
 }
 
 tabs.forEach(t => t.addEventListener('click', () => switchModule(t.dataset.module)));
 
+// Language Toggle
+langSelect.addEventListener('change', (e) => {
+    APP.lang = e.target.value;
+    updateText();
+});
 
 // ==========================================
 // MODULE: SORTING
@@ -472,19 +621,17 @@ function generateArray() {
     const size = sliderVal;
 
     if (APP.isImageMode) {
-        // Generate Permutation 0 to Size-1
         for (let i = 0; i < size; i++) APP.sortData.push(i);
-        // Shuffle (Fisher-Yates)
         for (let i = size - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [APP.sortData[i], APP.sortData[j]] = [APP.sortData[j], APP.sortData[i]];
         }
-        setStatus(`Ready (Image Sort) - Size: ${size}`);
+        setStatus(t('status_image') + ` - Size: ${size}`);
     } else {
         for (let i = 0; i < size; i++) {
             APP.sortData.push(Math.floor(Math.random() * (CONFIG.maxVal - CONFIG.minVal + 1)) + CONFIG.minVal);
         }
-        setStatus(`Ready (Sorting) - Size: ${size}`);
+        setStatus(t('status_sorting') + ` - Size: ${size}`);
     }
 
     renderArray();
@@ -493,52 +640,44 @@ function generateArray() {
 function renderArray(activeIndices = [], specialColor = null) {
     elViz.innerHTML = '';
     const n = APP.sortData.length;
+    const useMargin = n <= 60;
     const widthPercent = 100 / n;
 
     APP.sortData.forEach((val, idx) => {
         const bar = document.createElement('div');
         bar.className = 'bar';
-        bar.style.width = `${widthPercent}%`;
 
         if (APP.isImageMode) {
-            // Image Mode Rendering
-            bar.style.height = '100%'; // Full height
+            // Image Mode Rendering with Flexbox Fix
+            bar.style.height = '100%';
+            bar.style.width = 'auto'; // let flex handle it
+            bar.style.flex = '1 1 0%'; // Grow evenly
+
             bar.style.backgroundImage = `url('${APP.imgSrc}')`;
-            bar.style.backgroundSize = `${n * 100}% 100%`; // IMPORTANT: Slices
-            // Calculate Position:
-            // If sorted index is 'val' (0..n-1)
-            // Position should be: (val / (n-1)) * 100% ... wait, background-position % is tricky.
-            // When bg-size is huge, percentage pos aligns [point on img] with [point on container].
-            // Easier to use Pixels or calculated per-slice offset.
+            bar.style.backgroundSize = `${n * 100}% 100%`;
 
-            // Using logic: position X = - (val * sliceWidth).
-            // But logic must work responsively.
-            // Let's try simplified approach:
-
-            // bg-size: (n * 100)%
-            // slice width = 100% (of bar)
-            // offset = val * 100% (of bar)
-            // background-position-x: calc(val * -100%) ? No, bg pos relative to image?
-
-            // Correct Math for Sprite Sheets/Slices using percentages:
-            // background-position: (index / (total - 1)) * 100%;
-            // Here 'index' is 'val' (the target position)
-            // 'total' is n
             const posP = n > 1 ? (val / (n - 1)) * 100 : 0;
             bar.style.backgroundPosition = `${posP}% 0`;
 
             bar.style.backgroundColor = 'transparent';
             bar.style.border = 'none';
             bar.style.borderRadius = '0';
+            bar.style.margin = '0'; // No gaps
         } else {
             // Standard Mode
+            bar.style.width = `${widthPercent}%`;
             bar.style.height = `${val}%`;
             bar.style.backgroundImage = 'none';
-            bar.style.backgroundColor = varCss('--bar-default'); // Needs helper
-            bar.style.borderTopLeftRadius = '4px';
-            bar.style.borderTopRightRadius = '4px';
+            bar.style.backgroundColor = varCss('--bar-default');
 
-            if (APP.sortMode === 'game') {
+            // Optimization
+            if (!useMargin) {
+                bar.style.margin = '0';
+                bar.style.borderTopLeftRadius = '0';
+                bar.style.borderTopRightRadius = '0';
+            }
+
+            if (APP.sortMode === 'game' && n <= 40) {
                 bar.textContent = val;
                 bar.style.color = '#fff';
                 bar.style.fontSize = '10px';
@@ -550,7 +689,6 @@ function renderArray(activeIndices = [], specialColor = null) {
 
         if (activeIndices.includes(idx)) {
             if (APP.isImageMode) {
-                // Just use opacity or border to highlight
                 bar.style.opacity = '0.7';
                 bar.style.filter = 'brightness(1.5)';
             } else {
@@ -583,15 +721,15 @@ async function runSortingCode() {
     APP.isRunning = true;
     APP.shouldStop = false;
     toggleControls(false);
-    setStatus('Running Sorting...');
+    setStatus(t('status_running'));
 
     try {
         const userFunc = new Function('data', 'swap', 'renderArray', 'CONFIG', 'APP', `return (async () => { ${code} })()`);
         await userFunc(APP.sortData, swap, renderArray, CONFIG, APP);
         renderArray();
-        setStatus('Finished!');
+        setStatus(t('status_finished'));
     } catch (e) {
-        if (e.message === 'Stopped by user') setStatus('Stopped.');
+        if (e.message === 'Stopped by user') setStatus(t('status_stopped'));
         else { console.error(e); alert(e); }
     } finally {
         APP.isRunning = false;
@@ -612,9 +750,6 @@ function waitForDecision(prompt, btn1Text, btn2Text, validator) {
         feedbackMsg.textContent = '';
         feedbackMsg.className = 'feedback';
 
-        // Hide overlay text if image Mode? No, we still need controls.
-        // But maybe move it?
-
         gameControls.classList.remove('hidden');
         gameControls.style.display = 'block';
         APP.pfResolvers = { resolve, reject, validator };
@@ -627,7 +762,7 @@ async function handleGameDecision(choiceIdx) {
 
     const result = validator(choiceIdx);
     if (result.correct) {
-        feedbackMsg.textContent = "Correct! " + (result.message || "");
+        feedbackMsg.textContent = t('msg_correct') + " " + (result.message || "");
         feedbackMsg.classList.add('correct');
         APP.pfResolvers = null;
 
@@ -638,13 +773,12 @@ async function handleGameDecision(choiceIdx) {
         gameControls.style.display = 'none';
         resolve(true);
     } else {
-        feedbackMsg.textContent = "Wrong! " + (result.message || "");
+        feedbackMsg.textContent = t('msg_wrong') + " " + (result.message || "");
         feedbackMsg.classList.add('wrong');
         setTimeout(() => feedbackMsg.classList.remove('wrong'), 500);
     }
 }
 
-// Algorithms (Interactive)
 async function interactiveBubbleSort() {
     for (let i = 0; i < APP.sortData.length; i++) {
         for (let j = 0; j < APP.sortData.length - i - 1; j++) {
@@ -653,24 +787,25 @@ async function interactiveBubbleSort() {
             const valB = APP.sortData[j + 1];
             const shouldSwap = valA > valB;
 
-            // In Image mode, values are indices (0..N). Comparison is still valid.
-            const prompt = APP.isImageMode
-                ? `Is Left Image Slice > Right Image Slice? (Index ${valA} vs ${valB})`
-                : `Compare <b>[${valA}]</b> and <b>[${valB}]</b>.<br>Should we swap?`;
+            let prompt = "";
+            if (APP.isImageMode) {
+                prompt = t('prompt_bubble_img').replace('{0}', valA).replace('{1}', valB);
+            } else {
+                prompt = t('prompt_bubble').replace('{0}', valA).replace('{1}', valB);
+            }
 
             await waitForDecision(
-                prompt, "Swap", "Pass",
+                prompt, t('game_swap'), t('game_pass'),
                 (choice) => {
                     if (choice === 1 && shouldSwap) return { correct: true, action: async () => await swap(j, j + 1) };
                     if (choice === 2 && !shouldSwap) return { correct: true };
-                    return { correct: false, message: "Wrong decision." };
+                    return { correct: false, message: "" };
                 }
             );
         }
     }
 }
 
-// ... Using existing logic for others, they use values.
 async function interactiveSelectionSort() {
     for (let i = 0; i < APP.sortData.length; i++) {
         let minIdx = i;
@@ -682,8 +817,8 @@ async function interactiveSelectionSort() {
             const isSmaller = compareVal < currentMin;
 
             await waitForDecision(
-                `Check if Right is smaller?`,
-                "Yes", "No",
+                t('prompt_selection'),
+                t('game_yes'), t('game_no'),
                 (choice) => {
                     if (choice === 1 && isSmaller) { minIdx = j; return { correct: true }; }
                     if (choice === 2 && !isSmaller) return { correct: true };
@@ -694,30 +829,24 @@ async function interactiveSelectionSort() {
         if (minIdx !== i) await swap(i, minIdx);
     }
 }
-// Placeholder for others... logic is same.
 
 async function runGame() {
     if (APP.isRunning) return;
     APP.isRunning = true;
     APP.shouldStop = false;
     toggleControls(false);
-    setStatus('Game Started!');
-
-    // In Image Mode, hide textual prompts/values? 
-    // They are hidden in renderArray by default for image mode.
+    setStatus(t('status_running'));
 
     const algo = algoSelect.value;
     try {
         if (algo === 'bubble') await interactiveBubbleSort();
         else if (algo === 'selection') await interactiveSelectionSort();
-        // Fallbacks for others to be implemented full or reuse standard
-        else {
-            await interactiveBubbleSort(); // Default for now
-        }
+        else await interactiveBubbleSort();
+
         renderArray([], CONFIG.colors.sorted);
-        setStatus('Victory!');
+        setStatus(t('status_victory'));
     } catch (e) {
-        if (e.message === 'Stopped by user') setStatus('Stopped.');
+        if (e.message === 'Stopped by user') setStatus(t('status_stopped'));
         else { console.error(e); }
     } finally {
         APP.isRunning = false;
@@ -731,7 +860,6 @@ async function runGame() {
 // ==========================================
 // MODULE: PATHFINDING (Kept the same)
 // ==========================================
-// (Copied existing Pathfinding logic)
 
 function generateGrid() {
     elGrid.innerHTML = '';
@@ -825,15 +953,15 @@ async function reconstructionPath(endNode, cameFromMap) {
 async function runPathfindingCode() {
     if (APP.isRunning) return;
     const code = elEditor.value;
-    APP.isRunning = true; APP.shouldStop = false; toggleControls(false); setStatus('Running Pathfinding...');
+    APP.isRunning = true; APP.shouldStop = false; toggleControls(false); setStatus(t('status_running'));
     APP.grid.forEach(row => row.forEach(n => { n.div.classList.remove('visited', 'path'); n.parent = null; }));
     try {
         const startNode = APP.grid[APP.pfStart.r][APP.pfStart.c];
         const endNode = APP.grid[APP.pfEnd.r][APP.pfEnd.c];
         const userFunc = new Function('startNode', 'endNode', 'getNeighbors', 'visit', 'reconstructionPath', `return (async () => { ${code} })()`);
         await userFunc(startNode, endNode, getNeighbors, visit, reconstructionPath);
-        setStatus('Finished!');
-    } catch (e) { if (e.message === 'Stopped by user') setStatus('Stopped.'); else { console.error(e); alert(e.message); } } finally { APP.isRunning = false; toggleControls(true); }
+        setStatus(t('status_finished'));
+    } catch (e) { if (e.message === 'Stopped by user') setStatus(t('status_stopped')); else { console.error(e); alert(e.message); } } finally { APP.isRunning = false; toggleControls(true); }
 }
 
 // ==========================================
@@ -844,7 +972,7 @@ function toggleControls(enable) {
     const btns = [btnRun, btnGenerate, algoSelect, btnPfRun, btnPfReset, pfAlgoSelect, ...tabs];
     btns.forEach(b => b.disabled = !enable);
     modeRadios.forEach(r => r.disabled = !enable);
-    imgModeCheck.disabled = !enable; // Image Mode Check
+    imgModeCheck.disabled = !enable;
 
     if (APP.module === 'sorting') btnStop.disabled = enable;
     else btnPfStop.disabled = enable;
@@ -871,12 +999,11 @@ btnRun.addEventListener('click', () => {
 btnGenerate.addEventListener('click', generateArray);
 btnStop.addEventListener('click', handleStop);
 
-// Image Mode Listeners
 imgModeCheck.addEventListener('change', (e) => {
     APP.isImageMode = e.target.checked;
     if (APP.isImageMode) {
         imgUpload.classList.remove('hidden');
-        elStatus.textContent = "Image Mode Active";
+        elStatus.textContent = t('status_image');
     } else {
         imgUpload.classList.add('hidden');
     }
@@ -889,13 +1016,12 @@ imgUpload.addEventListener('change', (e) => {
         const reader = new FileReader();
         reader.onload = function (evt) {
             APP.imgSrc = evt.target.result;
-            generateArray(); // Re-render with new image
+            generateArray();
         };
         reader.readAsDataURL(file);
     }
 });
 
-// Sorting Mode Switch
 modeRadios.forEach(radio => {
     radio.addEventListener('change', (e) => {
         APP.sortMode = e.target.value;
@@ -904,13 +1030,13 @@ modeRadios.forEach(radio => {
         if (APP.sortMode === 'game') {
             elEditor.style.display = 'none';
             gameOverlay.classList.remove('hidden');
-            btnRun.textContent = "Start Game";
+            btnRun.textContent = t('game_title'); // Or just Start
             updateEditorHeader();
             generateArray();
         } else {
             elEditor.style.display = 'block';
             gameOverlay.classList.add('hidden');
-            btnRun.textContent = "Run Code";
+            btnRun.textContent = t('btn_run');
             updateEditorHeader();
             generateArray();
         }
@@ -920,23 +1046,13 @@ algoSelect.addEventListener('change', () => {
     if (APP.sortMode === 'code') {
         elEditor.value = SORT_PRESETS[algoSelect.value];
     }
-    // Update game instructions if needed
-    if (APP.sortMode === 'game') {
-        const descriptions = {
-            'bubble': 'Bubble Sort: Compare adjacent items and swap if they are in wrong order.',
-            'selection': 'Selection Sort: Find the minimum value and move it to the front.',
-            'insertion': 'Insertion Sort: Take an item and insert it into the correct position.',
-            'quick': 'Quick Sort: Compare items to a pivot and move smaller ones to the left.',
-        };
-        gameInstruction.textContent = descriptions[algoSelect.value] || "Algorithm selected.";
-    }
 });
 
 
 // Event Listeners (Pathfinding)
 btnPfRun.addEventListener('click', runPathfindingCode);
 btnPfReset.addEventListener('click', () => {
-    generateGrid(); // clean reset
+    generateGrid();
 });
 btnPfStop.addEventListener('click', handleStop);
 pfAlgoSelect.addEventListener('change', (e) => {
@@ -947,13 +1063,11 @@ pfAlgoSelect.addEventListener('change', (e) => {
 btnAction1.addEventListener('click', () => handleGameDecision(1));
 btnAction2.addEventListener('click', () => handleGameDecision(2));
 
-// Speed
 speedRange.addEventListener('input', (e) => {
     const val = parseInt(e.target.value);
     APP.delayMs = 200 - (val * 1.9);
 });
 sizeRange.addEventListener('input', generateArray);
-
 
 // Boot
 init();
