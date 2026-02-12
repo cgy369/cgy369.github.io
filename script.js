@@ -37,6 +37,7 @@ const TRANSLATIONS = {
         status_running: "Running...",
         status_finished: "Finished!",
         status_stopped: "Stopped.",
+        maze_instruction: "You can find the path in Pathfinding after generating the maze.",
         msg_correct: "Correct!",
         msg_wrong: "Wrong!",
         game_title: "Interactive Sort",
@@ -70,6 +71,7 @@ const TRANSLATIONS = {
         status_running: "실행 중...",
         status_finished: "완료!",
         status_stopped: "정지됨.",
+        maze_instruction: "미로 생성 후 길찾기에서 길을 찾아볼 수 있습니다.",
         msg_correct: "정답입니다!",
         msg_wrong: "틀렸습니다!",
         game_title: "인터랙티브 정렬",
@@ -306,6 +308,7 @@ const btnGenerate = document.getElementById('btnGenerate');
 const algoSelect = document.getElementById('algoSelect');
 const imgModeCheck = document.getElementById('imgModeCheck');
 const imgUpload = document.getElementById('imgUpload');
+const lblImgUpload = document.getElementById('lblImgUpload');
 const sizeRange = document.getElementById('sizeRange');
 const speedRange = document.getElementById('speedRange');
 
@@ -377,11 +380,8 @@ function switchModule(modName) {
         if (modName === 'pathfinding') {
             elEditor.value = PF_PRESETS.astar;
             addPathfindingListeners();
-            // Restore Start/End Visuals (in case Maze Gen overwrote them)
-            const s = APP.grid[APP.pfStart.r][APP.pfStart.c];
-            const e = APP.grid[APP.pfEnd.r][APP.pfEnd.c];
-            if (s) { s.isWall = false; s.div.classList.remove('wall'); s.div.classList.add('start'); }
-            if (e) { e.isWall = false; e.div.classList.remove('wall'); e.div.classList.add('end'); }
+            // Restore Start/End Visuals (using current APP state)
+            updatePathfindingNodes();
         } else if (modName === 'maze') {
             elEditor.parentElement.style.display = 'none';
         } else if (modName === 'gameoflife') {
@@ -435,6 +435,7 @@ function renderArray(activeIndices = [], color = null) {
             bar.style.backgroundSize = `${n * 100}% 100%`;
             bar.style.backgroundPosition = `${n > 1 ? (val / (n - 1)) * 100 : 0}% 0`;
             bar.style.border = 'none';
+            bar.style.margin = '0';
             if (activeIndices.includes(idx)) bar.style.opacity = '0.5';
         } else {
             bar.style.width = `${100 / n}%`;
@@ -585,8 +586,10 @@ function generateGrid(size = CONFIG.gridSize) {
     APP.pfEnd = { r: size - 2, c: size - 2 };
 
     if (APP.module === 'pathfinding') {
-        updateStartNode(APP.pfStart.r, APP.pfStart.c, true);
-        updateEndNode(APP.pfEnd.r, APP.pfEnd.c, true);
+        updatePathfindingNodes();
+        addPathfindingListeners();
+    } else if (APP.module === 'gameoflife') {
+        addGoLListeners();
     }
 }
 
@@ -691,8 +694,24 @@ function addGoLListeners() {
 function removeGridListeners() {
     APP.grid.forEach(row => row.forEach(n => n.div.onclick = null));
 }
-function updateStartNode(r, c, f) { APP.grid[APP.pfStart.r][APP.pfStart.c].div.classList.remove('start'); APP.pfStart = { r, c }; APP.grid[r][c].div.classList.add('start'); }
-function updateEndNode(r, c, f) { APP.grid[APP.pfEnd.r][APP.pfEnd.c].div.classList.remove('end'); APP.pfEnd = { r, c }; APP.grid[r][c].div.classList.add('end'); }
+function updatePathfindingNodes() {
+    // Clear any previous start/end
+    APP.grid.forEach(row => row.forEach(n => n.div.classList.remove('start', 'end')));
+    const s = APP.grid[APP.pfStart.r][APP.pfStart.c];
+    const e = APP.grid[APP.pfEnd.r][APP.pfEnd.c];
+    if (s) { s.isWall = false; s.div.classList.remove('wall'); s.div.classList.add('start'); }
+    if (e) { e.isWall = false; e.div.classList.remove('wall'); e.div.classList.add('end'); }
+}
+function updateStartNode(r, c) {
+    if (r === APP.pfEnd.r && c === APP.pfEnd.c) return;
+    APP.pfStart = { r, c };
+    updatePathfindingNodes();
+}
+function updateEndNode(r, c) {
+    if (r === APP.pfStart.r && c === APP.pfStart.c) return;
+    APP.pfEnd = { r, c };
+    updatePathfindingNodes();
+}
 function setStatus(msg) { elStatus.textContent = msg; }
 
 // --- Buttons ---
@@ -804,6 +823,25 @@ btnPfRun.addEventListener('click', async () => {
 });
 
 btnStop.addEventListener('click', handleStop);
+
+// Sorting Mode Listeners
+imgModeCheck.addEventListener('change', (e) => {
+    APP.isImageMode = e.target.checked;
+    lblImgUpload.style.display = APP.isImageMode ? 'inline-block' : 'none';
+    generateArray();
+});
+
+imgUpload.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            APP.imgSrc = event.target.result;
+            generateArray();
+        };
+        reader.readAsDataURL(file);
+    }
+});
 
 // Start
 init();
