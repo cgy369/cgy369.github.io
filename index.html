@@ -4,120 +4,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cosmic Void | Explore Your Universe</title>
+    <title>JS Sorting Playground | Code & Visualize</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600;700&display=swap"
         rel="stylesheet">
+
+    <!-- AdSense Script -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7237384529818812"
         crossorigin="anonymous"></script>
 </head>
 
 <body>
-    <!-- Immersive Canvas Background -->
-    <canvas id="cosmosCanvas"></canvas>
+    <div class="app-container">
+        <!-- Header & Controls -->
+        <header class="toolbar">
+            <div class="brand">
+                <h1>JS Sort <span class="highlight">Playground</span></h1>
+            </div>
 
-    <!-- UI Overlay (Heads-Up Display) -->
-    <div id="uiLayer">
-        <!-- Top: Resources & Status -->
-        <header class="hud-top">
-            <div class="resource-panel">
-                <div class="energy-display">
-                    <span class="label">ENERGY</span>
-                    <span id="energyVal" class="value glow-text">0</span>
-                </div>
-                <div class="level-display">
-                    <span class="label">STAR CLASS</span>
-                    <span id="starClass" class="value">Proto-Star</span>
-                    <div class="progress-bar">
-                        <div id="levelProgress" class="fill"></div>
+            <div class="controls">
+                <div class="control-group mode-toggle">
+                    <label>Mode:</label>
+                    <div class="toggle-switch">
+                        <input type="radio" id="modeCode" name="appMode" value="code" checked>
+                        <label for="modeCode">Code</label>
+                        <input type="radio" id="modeGame" name="appMode" value="game">
+                        <label for="modeGame">Game</label>
                     </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Algorithm Preset:</label>
+                    <select id="algoSelect">
+                        <option value="bubble">Bubble Sort</option>
+                        <option value="selection">Selection Sort</option>
+                        <option value="insertion">Insertion Sort</option>
+                        <option value="quick">Quick Sort (Simple)</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <button id="btnGenerate" class="btn secondary">Re-Shuffle Array</button>
+                    <button id="btnRun" class="btn primary">Run Code</button>
+                    <button id="btnStop" class="btn danger" disabled>Stop</button>
+                </div>
+
+                <div class="control-group">
+                    <label>Speed:</label>
+                    <input type="range" id="speedRange" min="1" max="100" value="50">
                 </div>
             </div>
         </header>
 
-        <!-- Center: Interaction Zone (Invisible, handles clicks on star) -->
-        <div id="clickZone"></div>
-
-        <!-- Notification / Content Modal Area -->
-        <div id="overlayContainer" class="hidden">
-            <div class="content-card glass-panel">
-                <button id="closeContentBtn" class="close-btn">×</button>
-                <div id="contentBody">
-                    <h3 id="contentTitle">Cosmic Data</h3>
-                    <p id="contentText">Analyzing signal...</p>
-                    <button id="claimRewardBtn" class="action-btn">Absorb Energy (+<span
-                            id="rewardVal">500</span>)</button>
+        <!-- Main Workspace -->
+        <main class="workspace">
+            <!-- Code Editor Pane -->
+            <section class="pane editor-pane">
+                <div class="pane-header">
+                    <span>JavaScript Editor</span>
+                    <small>Available: <code>data[]</code>, <code>await swap(i,j)</code></small>
                 </div>
-            </div>
-        </div>
+                <!-- Simple Textarea for now, can upgrade to CodeMirror later if needed -->
+                <textarea id="codeEditor" spellcheck="false"></textarea>
 
-        <!-- Bottom: Control Systems -->
-        <footer class="hud-bottom">
-            <!-- AdSense Slot (Restored) -->
-            <div class="ad-container glass-panel" style="margin-bottom: 10px; padding: 5px;">
-                <ins class="adsbygoogle" style="display:block; width: 320px; height: 50px;"
-                    data-ad-client="ca-pub-7237384529818812" data-ad-slot="3580735781" data-ad-format="auto"
-                    data-full-width-responsive="true"></ins>
-            </div>
+                <!-- Game Overlay (Hidden by default) -->
+                <div id="gameOverlay" class="game-overlay hidden">
+                    <div class="game-content">
+                        <h2>Interactive Sort</h2>
+                        <p id="gameInstruction">Select an algorithm and click Run to start!</p>
 
-            <div class="control-deck glass-panel">
-                <button class="deck-btn active" onclick="switchPanel('upgrades')">⚡ Upgrades</button>
-                <button class="deck-btn" onclick="switchPanel('stats')">📊 Cosmic Data</button>
-                <button class="deck-btn" onclick="switchPanel('birth')">🌟 Birth Origin</button>
-            </div>
-
-            <!-- Panels (Slide up) -->
-            <div id="panelContainer" class="panel-slider hidden">
-                <!-- Upgrade Panel -->
-                <div id="upgradesPanel" class="sub-panel">
-                    <div class="panel-header-row">
-                        <h3>Stellar Evolution</h3>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="autoEvolveToggle" onclick="toggleAutoEvolve()">
-                            <span class="slider"></span>
-                            <span class="toggle-label">AutoEvolve</span>
-                        </label>
-                    </div>
-                    <div class="upgrade-list" id="upgradeList">
-                        <!-- Dynamic Upgrades -->
-                    </div>
-                </div>
-
-                <!-- Stats Panel (Trivia/History/Etc) -->
-                <div id="statsPanel" class="sub-panel hidden">
-                    <h3>Universe Knowledge</h3>
-                    <div class="stats-grid">
-                        <div class="stat-item" onclick="fetchContent('trivia')">
-                            <span class="icon">❓</span>
-                            <span>Gather Trivia Shard</span>
-                        </div>
-                        <div class="stat-item" onclick="fetchContent('fact')">
-                            <span class="icon">💡</span>
-                            <span>Scan Useless Fact</span>
-                        </div>
-                        <div class="stat-item" onclick="fetchContent('history')">
-                            <span class="icon">📜</span>
-                            <span>Access History Log</span>
+                        <div id="gameControls" class="game-controls hidden">
+                            <div class="current-step">
+                                <span id="stepDesc">Compare A and B</span>
+                            </div>
+                            <div class="action-buttons">
+                                <button id="btnAction1" class="btn game-btn">Action 1</button>
+                                <button id="btnAction2" class="btn game-btn secondary">Action 2</button>
+                            </div>
+                            <div id="feedbackMsg" class="feedback"></div>
                         </div>
                     </div>
                 </div>
+            </section>
 
-                <!-- Birth Origin Panel -->
-                <div id="birthPanel" class="sub-panel hidden">
-                    <h3>Origin Signal</h3>
-                    <div class="input-group">
-                        <input type="date" id="birthDate" class="lcd-input">
-                        <button onclick="discoverOrigin()" class="lcd-btn">Triangulate</button>
-                    </div>
-                    <div id="originResult" class="origin-display"></div>
+            <!-- Visualizer Pane -->
+            <section class="pane viz-pane">
+                <div class="pane-header">
+                    <span>Visualizer</span>
+                    <span id="statusText">Ready</span>
                 </div>
+                <div id="visualizerContainer">
+                    <!-- Bars will be injected here by JS -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer / Ad Space -->
+        <footer class="ad-footer">
+            <div class="ad-container">
+                <!-- Ad Unit -->
+                <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-7237384529818812"
+                    data-ad-slot="3580735781" data-ad-format="auto" data-full-width-responsive="true"></ins>
             </div>
         </footer>
     </div>
 
+    <!-- AdSense Initialization Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                if (typeof adsbygoogle !== 'undefined') {
+                    try {
+                        (adsbygoogle = window.adsbygoogle || []).push({});
+                    } catch (e) {
+                        console.warn("AdSense init warn:", e);
+                    }
+                }
+            }, 1000);
+        });
+    </script>
     <script src="script.js"></script>
 </body>
 
