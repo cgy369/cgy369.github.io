@@ -11,7 +11,7 @@ const CONFIG = {
         pivot: '#8b5cf6',
         compare: '#fbbf24'
     },
-    gridSize: 20
+    gridSize: 50
 };
 
 // --- Translations ---
@@ -20,7 +20,6 @@ const TRANSLATIONS = {
         tab_sorting: "Sorting",
         tab_pathfinding: "Pathfinding",
         tab_maze: "Maze Gen",
-        tab_nqueens: "N-Queens",
         tab_gameoflife: "Game of Life",
         tab_tsp: "TSP",
         label_mode: "Mode:",
@@ -33,7 +32,6 @@ const TRANSLATIONS = {
         status_image: "Sorting (Image)",
         status_pathfinding: "Pathfinding",
         status_maze: "Maze Generation",
-        status_nqueens: "N-Queens",
         status_gol: "Game of Life",
         status_tsp: "Traveling Salesman",
         status_running: "Running...",
@@ -55,7 +53,6 @@ const TRANSLATIONS = {
         tab_sorting: "정렬 (Sorting)",
         tab_pathfinding: "길찾기 (Pathfinding)",
         tab_maze: "미로 생성 (Maze)",
-        tab_nqueens: "N-Queen (체스)",
         tab_gameoflife: "생명 게임 (GoL)",
         tab_tsp: "외판원 문제 (TSP)",
         label_mode: "모드:",
@@ -68,7 +65,6 @@ const TRANSLATIONS = {
         status_image: "정렬 (이미지)",
         status_pathfinding: "길찾기",
         status_maze: "미로 생성",
-        status_nqueens: "N-Queen 문제",
         status_gol: "생명 게임",
         status_tsp: "외판원 문제 (TSP)",
         status_running: "실행 중...",
@@ -274,7 +270,6 @@ const controls = {
     sorting: document.getElementById('controls_sorting'),
     pathfinding: document.getElementById('controls_pathfinding'),
     maze: document.getElementById('controls_maze'),
-    nqueens: document.getElementById('controls_nqueens'),
     gameoflife: document.getElementById('controls_gameoflife'),
     tsp: document.getElementById('controls_tsp')
 };
@@ -292,10 +287,6 @@ const speedRange = document.getElementById('speedRange');
 // Maze DOM
 const btnMazeGen = document.getElementById('btnMazeGen');
 
-// NQueens DOM
-const btnNQueensRun = document.getElementById('btnNQueensRun');
-const nQueensInput = document.getElementById('nQueensInput');
-
 // GoL DOM
 const btnGolStart = document.getElementById('btnGolStart');
 const btnGolStop = document.getElementById('btnGolStop');
@@ -307,7 +298,7 @@ const btnTspRun = document.getElementById('btnTspRun');
 const btnTspNew = document.getElementById('btnTspNew');
 
 
-// --- Initialization ---
+// GoL DOM
 function init() {
     generateArray();
     generateGrid();
@@ -328,46 +319,42 @@ function switchModule(modName) {
     if (APP.isRunning || APP.golRunning) handleStop();
     APP.module = modName;
 
-    Object.keys(controls).forEach(key => {
-        if (key === modName) controls[key].classList.remove('hidden');
-        else controls[key].classList.add('hidden');
-    });
+    if (key === modName) controls[key].classList.remove('hidden');
+    else controls[key].classList.add('hidden');
+});
 
-    elViz.classList.add('hidden');
-    elGrid.classList.add('hidden');
-    elCanvas.classList.add('hidden');
-    elEditor.parentElement.style.display = 'flex';
+elViz.classList.add('hidden');
+elGrid.classList.add('hidden');
+elCanvas.classList.add('hidden');
+elEditor.parentElement.style.display = 'flex';
 
-    removeGridListeners();
-    btnStop.disabled = true; // Reset stop state
+removeGridListeners();
+btnStop.disabled = true; // Reset stop state
 
-    if (modName === 'sorting') {
-        elViz.classList.remove('hidden');
-        elEditor.value = SORT_PRESETS[algoSelect.value];
-    } else if (modName === 'tsp') {
-        elCanvas.classList.remove('hidden');
+if (modName === 'sorting') {
+    elViz.classList.remove('hidden');
+    elEditor.value = SORT_PRESETS[algoSelect.value];
+} else if (modName === 'tsp') {
+    elCanvas.classList.remove('hidden');
+    elEditor.parentElement.style.display = 'none';
+    resizeCanvas();
+    generateTSP();
+} else {
+    elGrid.classList.remove('hidden');
+    elGrid.className = '';
+
+    if (modName === 'pathfinding') {
+        elEditor.value = PF_PRESETS.astar;
+        addPathfindingListeners();
+    } else if (modName === 'maze') {
         elEditor.parentElement.style.display = 'none';
-        resizeCanvas();
-        generateTSP();
-    } else {
-        elGrid.classList.remove('hidden');
-        elGrid.className = '';
-
-        if (modName === 'pathfinding') {
-            elEditor.value = PF_PRESETS.astar;
-            addPathfindingListeners();
-        } else if (modName === 'maze') {
-            elEditor.parentElement.style.display = 'none';
-        } else if (modName === 'nqueens') {
-            elEditor.parentElement.style.display = 'none';
-            generateGrid(APP.nQueensSize);
-        } else if (modName === 'gameoflife') {
-            elEditor.parentElement.style.display = 'none';
-            generateGrid(CONFIG.gridSize);
-            addGoLListeners();
-        }
+    } else if (modName === 'gameoflife') {
+        elEditor.parentElement.style.display = 'none';
+        generateGrid(CONFIG.gridSize);
+        addGoLListeners();
     }
-    updateText();
+}
+updateText();
 }
 
 moduleSelect.addEventListener('change', (e) => switchModule(e.target.value));
@@ -608,46 +595,6 @@ async function generateMaze() {
     btnStop.disabled = true;
 }
 
-// --- N-QUEENS ---
-async function solveNQueens() {
-    if (APP.isRunning) return;
-    APP.isRunning = true; APP.shouldStop = false;
-    btnStop.disabled = false;
-    const n = parseInt(nQueensInput.value);
-    generateGrid(n);
-
-    let board = new Array(n).fill(-1);
-    async function backtrack(col) {
-        if (APP.shouldStop) return false;
-        if (col >= n) return true;
-        for (let row = 0; row < n; row++) {
-            APP.grid[row][col].div.classList.add('active');
-            await sleep(APP.delayMs);
-            APP.grid[row][col].div.classList.remove('active');
-
-            if (isSafe(board, row, col)) {
-                board[col] = row;
-                APP.grid[row][col].div.textContent = '♛';
-                APP.grid[row][col].div.style.color = '#f43f5e';
-                if (await backtrack(col + 1)) return true;
-                board[col] = -1;
-                APP.grid[row][col].div.textContent = '';
-            }
-        }
-        return false;
-    }
-    function isSafe(board, row, col) {
-        for (let i = 0; i < col; i++) {
-            if (board[i] === row || Math.abs(board[i] - row) === Math.abs(i - col))
-                return false;
-        }
-        return true;
-    }
-    await backtrack(0);
-    APP.isRunning = false;
-    btnStop.disabled = true;
-}
-
 // --- GAME OF LIFE ---
 async function runGameOfLife() {
     if (APP.golRunning) return;
@@ -722,16 +669,36 @@ btnRun.addEventListener('click', () => {
     });
 });
 btnMazeGen.addEventListener('click', generateMaze);
-btnNQueensRun.addEventListener('click', solveNQueens);
-nQueensInput.addEventListener('change', () => solveNQueens());
 btnGolStart.addEventListener('click', runGameOfLife);
 btnGolStop.addEventListener('click', () => { APP.golRunning = false; btnStop.disabled = true; });
 btnGolClear.addEventListener('click', () => { APP.golRunning = false; generateGrid(); addGoLListeners(); });
 btnGolRandom.addEventListener('click', () => {
     generateGrid(); addGoLListeners();
-    APP.grid.forEach(row => row.forEach(n => {
-        if (Math.random() < 0.3) { n.isAlive = true; n.div.classList.add('start'); }
-    }));
+    // Generate "Acorn" Pattern (Methuselah)
+    // .O.....
+    // ...O...
+    // OO..OOO
+    const cx = Math.floor(CONFIG.gridSize / 2);
+    const cy = Math.floor(CONFIG.gridSize / 2);
+    const acorn = [
+        [0, 1],
+        [2, 1], [3, 2], // ...O... (relative to some start) - Wait, let's map coordinates correctly
+        // Rel to center (0,0):
+        // Row 0: . O . . . . .  -> (0, 1)
+        // Row 1: . . . O . . .  -> (1, 3)
+        // Row 2: O O . . O O O  -> (2, 0), (2, 1), (2, 4), (2, 5), (2, 6)
+        // Let's center it:
+        { r: cy - 1, c: cx - 2 },
+        { r: cy + 1, c: cx },
+        { r: cy + 2, c: cx - 3 }, { r: cy + 2, c: cx - 2 }, { r: cy + 2, c: cx + 1 }, { r: cy + 2, c: cx + 2 }, { r: cy + 2, c: cx + 3 }
+    ];
+
+    acorn.forEach(p => {
+        if (APP.grid[p.r] && APP.grid[p.r][p.c]) {
+            APP.grid[p.r][p.c].isAlive = true;
+            APP.grid[p.r][p.c].div.classList.add('start');
+        }
+    });
 });
 btnTspRun.addEventListener('click', solveTSP);
 btnTspNew.addEventListener('click', () => { generateTSP(); });
