@@ -376,9 +376,23 @@ function init() {
 function resizeCanvas() {
     const rect = elCanvas.parentElement.getBoundingClientRect();
     const w = rect.width, h = rect.height - 40;
+
+    // Always sync elCanvas (TSP) to parent
     elCanvas.width = w; elCanvas.height = h;
-    elPixelCanvas.width = w; elPixelCanvas.height = h;
+
+    // Only sync pixelCanvas if no image is loaded yet
+    if (!APP.pixelOriginalData) {
+        elPixelCanvas.width = w;
+        elPixelCanvas.height = h;
+    }
+
     if (APP.module === 'tsp') drawTSP();
+    else if (APP.module === 'pixel' && APP.pixelOriginalData) {
+        // Just ensure it's drawn if it was hidden
+        const ctx = elPixelCanvas.getContext('2d');
+        // Do not clear and redraw here to avoid erasing user smudge work
+        // But if dimensions changed, it's tricky. For now, we avoid auto-resize if data exists.
+    }
 }
 
 // --- Module Switching (Select Box) ---
@@ -1117,9 +1131,13 @@ function handlePixelUpload(e) {
         const img = new Image();
         img.onload = () => {
             const ctx = elPixelCanvas.getContext('2d');
-            // Resize image to fit within canvas while maintaining aspect ratio
-            const ratio = Math.min(elPixelCanvas.width / img.width, elPixelCanvas.height / img.height);
+            // Get parent size for fit
+            const rect = elPixelCanvas.parentElement.getBoundingClientRect();
+            const maxW = rect.width, maxH = rect.height - 40;
+
+            const ratio = Math.min(maxW / img.width, maxH / img.height);
             const w = img.width * ratio, h = img.height * ratio;
+
             elPixelCanvas.width = w; elPixelCanvas.height = h;
             ctx.drawImage(img, 0, 0, w, h);
             APP.pixelOriginalData = ctx.getImageData(0, 0, w, h);
@@ -1285,18 +1303,25 @@ function pixelSort(mx, my) {
 
 function loadRandomPixelImage() {
     const img = new Image();
-    img.crossOrigin = "Anonymous";
+    img.crossOrigin = "anonymous"; // Lowercase for safety
     img.onload = () => {
         const ctx = elPixelCanvas.getContext('2d');
-        const ratio = Math.min(elPixelCanvas.width / img.width, elPixelCanvas.height / img.height);
+        const rect = elPixelCanvas.parentElement.getBoundingClientRect();
+        const maxW = rect.width || 800, maxH = (rect.height - 40) || 600;
+
+        const ratio = Math.min(maxW / img.width, maxH / img.height);
         const w = img.width * ratio, h = img.height * ratio;
+
         elPixelCanvas.width = w; elPixelCanvas.height = h;
         ctx.drawImage(img, 0, 0, w, h);
         APP.pixelOriginalData = ctx.getImageData(0, 0, w, h);
         setStatus(t('status_finished'));
     };
-    // Random high quality image from picsum
-    img.src = `https://picsum.photos/800/600?random=${Math.floor(Math.random() * 1000)}`;
+    img.onerror = () => {
+        setStatus("Image failed to load");
+    };
+    // Use a specific image to avoid some picsum redirects that block CORS
+    img.src = `https://picsum.photos/800/600?random=${Date.now()}`;
     setStatus(t('status_running'));
 }
 
