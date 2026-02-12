@@ -121,6 +121,173 @@ async function quickSort(low, high) {
     }
 }
 await quickSort(0, data.length - 1);`,
+
+    merge: `// Merge Sort
+async function merge(l, m, r) {
+    let n1 = m - l + 1;
+    let n2 = r - m;
+    let L = new Array(n1);
+    let R = new Array(n2);
+
+    for (let i = 0; i < n1; i++) L[i] = data[l + i];
+    for (let j = 0; j < n2; j++) R[j] = data[m + 1 + j];
+
+    let i = 0, j = 0, k = l;
+    while (i < n1 && j < n2) {
+        // Visualizing comparison requires accessing data[k], 
+        // but we are overwriting it. We just simulate swap-like delay.
+        if (L[i] <= R[j]) {
+            data[k] = L[i];
+            i++;
+        } else {
+            data[k] = R[j];
+            j++;
+        }
+        // Force update visualization for index k
+        renderArray([k], CONFIG.colors.active); 
+        await sleep(APP.delayMs);
+        k++;
+    }
+
+    while (i < n1) {
+        data[k] = L[i];
+        renderArray([k], CONFIG.colors.active);
+        await sleep(APP.delayMs);
+        i++; k++;
+    }
+    while (j < n2) {
+        data[k] = R[j];
+        renderArray([k], CONFIG.colors.active);
+        await sleep(APP.delayMs);
+        j++; k++;
+    }
+}
+
+async function mergeSort(l, r) {
+    if (l >= r) return;
+    let m = l + parseInt((r - l) / 2);
+    await mergeSort(l, m);
+    await mergeSort(m + 1, r);
+    await merge(l, m, r);
+}
+await mergeSort(0, data.length - 1);`,
+
+    heap: `// Heap Sort
+async function heapify(n, i) {
+    let largest = i;
+    let l = 2 * i + 1;
+    let r = 2 * i + 2;
+
+    if (l < n && data[l] > data[largest]) largest = l;
+    if (r < n && data[r] > data[largest]) largest = r;
+
+    if (largest !== i) {
+        await swap(i, largest);
+        await heapify(n, largest);
+    }
+}
+
+let n = data.length;
+for (let i = Math.floor(n / 2) - 1; i >= 0; i--) {
+    await heapify(n, i);
+}
+
+for (let i = n - 1; i > 0; i--) {
+    await swap(0, i);
+    await heapify(i, 0);
+}`,
+
+    cocktail: `// Cocktail Shaker Sort
+let swapped = true;
+let start = 0;
+let end = data.length;
+
+while (swapped) {
+    swapped = false;
+    for (let i = start; i < end - 1; ++i) {
+        if (data[i] > data[i + 1]) {
+            await swap(i, i + 1);
+            swapped = true;
+        }
+    }
+    if (!swapped) break;
+    swapped = false;
+    end--;
+
+    for (let i = end - 1; i >= start; i--) {
+        if (data[i] > data[i + 1]) {
+            await swap(i, i + 1);
+            swapped = true;
+        }
+    }
+    start++;
+}`,
+
+    radix: `// Radix Sort (LSD)
+async function getMax() {
+    let mx = data[0];
+    for (let i = 1; i < data.length; i++)
+        if (data[i] > mx) mx = data[i];
+    return mx;
+}
+
+async function countSort(exp) {
+    let output = new Array(data.length).fill(0);
+    let count = new Array(10).fill(0);
+
+    for (let i = 0; i < data.length; i++) {
+        let index = Math.floor(data[i] / exp) % 10;
+        count[index]++;
+    }
+
+    for (let i = 1; i < 10; i++) count[i] += count[i - 1];
+
+    for (let i = data.length - 1; i >= 0; i--) {
+        let index = Math.floor(data[i] / exp) % 10;
+        output[count[index] - 1] = data[i];
+        count[index]--;
+    }
+
+    for (let i = 0; i < data.length; i++) {
+        data[i] = output[i];
+        renderArray([i], CONFIG.colors.active);
+        await sleep(APP.delayMs);
+    }
+}
+
+let m = await getMax();
+for (let exp = 1; Math.floor(m / exp) > 0; exp *= 10) {
+    await countSort(exp);
+}`,
+
+    bogo: `// Bogo Sort (WARNING: Very Slow)
+function isSorted() {
+    for(let i=0; i<data.length-1; i++){
+        if(data[i] > data[i+1]) return false;
+    }
+    return true;
+}
+
+function shuffle() {
+    // Fisher-Yates shuffle
+    for (let i = data.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        // We use swap here, but Bogo usually just randomly permutes.
+        // But since we are visualizing, swap makes it look like "shuffling"
+        let temp = data[i];
+        data[i] = data[j];
+        data[j] = temp;
+    }
+}
+
+while(!isSorted()) {
+    // Visualize the shuffle
+    for (let i = data.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        await swap(i, j);
+    }
+    // Check if sorted? The loop handles it.
+}`,
     custom: `// Writes your own sort!
 // data 배열을 직접 변경하면 정렬이 적용됩니다. (Sorting is applied when you modify 'data')
 // 시각화를 원하시면 await swap(i, j)를 사용하세요. (Use await swap(i, j) for visualization)
@@ -248,15 +415,18 @@ tabs.forEach(t => t.addEventListener('click', () => switchModule(t.dataset.modul
 
 function generateArray() {
     APP.sortData = [];
-    const sliderVal = sizeRange ? parseInt(sizeRange.value) : CONFIG.arraySize;
-    // In game mode, maybe force smaller size? But user requested slider control.
+    const el = document.getElementById('sizeRange');
+    const sliderVal = el ? parseInt(el.value) : CONFIG.arraySize;
+
+    console.log("Generating Array. Size:", sliderVal); // Debug log
+
     const size = sliderVal;
 
     for (let i = 0; i < size; i++) {
         APP.sortData.push(Math.floor(Math.random() * (CONFIG.maxVal - CONFIG.minVal + 1)) + CONFIG.minVal);
     }
     renderArray();
-    setStatus('Ready (Sorting)');
+    setStatus(`Ready (Sorting) - Size: ${size}`);
 }
 
 function renderArray(activeIndices = [], specialColor = null) {
@@ -306,8 +476,8 @@ async function runSortingCode() {
     setStatus('Running Sorting...');
 
     try {
-        const userFunc = new Function('data', 'swap', `return (async () => { ${code} })()`);
-        await userFunc(APP.sortData, swap);
+        const userFunc = new Function('data', 'swap', 'renderArray', 'CONFIG', 'APP', `return (async () => { ${code} })()`);
+        await userFunc(APP.sortData, swap, renderArray, CONFIG, APP);
         renderArray();
         setStatus('Finished!');
     } catch (e) {

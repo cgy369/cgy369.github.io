@@ -45,11 +45,24 @@
                     <div class="control-group">
                         <label>Algo:</label>
                         <select id="algoSelect">
-                            <option value="bubble">Bubble Sort</option>
-                            <option value="selection">Selection Sort</option>
-                            <option value="insertion">Insertion Sort</option>
-                            <option value="quick">Quick Sort</option>
-                            <option value="custom">Custom</option>
+                            <optgroup label="Simple (O(n²))">
+                                <option value="bubble">Bubble Sort</option>
+                                <option value="selection">Selection Sort</option>
+                                <option value="insertion">Insertion Sort</option>
+                                <option value="cocktail">Cocktail Shaker Sort</option>
+                            </optgroup>
+                            <optgroup label="Efficient (O(n log n))">
+                                <option value="quick">Quick Sort</option>
+                                <option value="merge">Merge Sort</option>
+                                <option value="heap">Heap Sort</option>
+                            </optgroup>
+                            <optgroup label="Special / Fun">
+                                <option value="radix">Radix Sort (LSD)</option>
+                                <option value="bogo">Bogo Sort (The Worst)</option>
+                            </optgroup>
+                            <optgroup label="User Defined">
+                                <option value="custom">Custom Script</option>
+                            </optgroup>
                         </select>
                     </div>
 

@@ -218,14 +218,15 @@ button:disabled {
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    gap: 2px;
+    /* gap: 2px; -- Removed to prevent overflow with 100% width sum */
     padding-top: 2rem;
 }
 
 .bar {
     background-color: var(--bar-default);
-    width: 20px;
-    /* Will be set dynamically */
+    /* width set dynamically */
+    margin: 0 1px;
+    /* Small margin instead of gap */
     border-top-left-radius: 4px;
     border-top-right-radius: 4px;
     transition: height 0.1s ease;
