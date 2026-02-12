@@ -319,42 +319,43 @@ function switchModule(modName) {
     if (APP.isRunning || APP.golRunning) handleStop();
     APP.module = modName;
 
-    if (key === modName) controls[key].classList.remove('hidden');
-    else controls[key].classList.add('hidden');
-});
+    Object.keys(controls).forEach(key => {
+        if (key === modName) controls[key].classList.remove('hidden');
+        else controls[key].classList.add('hidden');
+    });
 
-elViz.classList.add('hidden');
-elGrid.classList.add('hidden');
-elCanvas.classList.add('hidden');
-elEditor.parentElement.style.display = 'flex';
+    elViz.classList.add('hidden');
+    elGrid.classList.add('hidden');
+    elCanvas.classList.add('hidden');
+    elEditor.parentElement.style.display = 'flex';
 
-removeGridListeners();
-btnStop.disabled = true; // Reset stop state
+    removeGridListeners();
+    btnStop.disabled = true; // Reset stop state
 
-if (modName === 'sorting') {
-    elViz.classList.remove('hidden');
-    elEditor.value = SORT_PRESETS[algoSelect.value];
-} else if (modName === 'tsp') {
-    elCanvas.classList.remove('hidden');
-    elEditor.parentElement.style.display = 'none';
-    resizeCanvas();
-    generateTSP();
-} else {
-    elGrid.classList.remove('hidden');
-    elGrid.className = '';
-
-    if (modName === 'pathfinding') {
-        elEditor.value = PF_PRESETS.astar;
-        addPathfindingListeners();
-    } else if (modName === 'maze') {
+    if (modName === 'sorting') {
+        elViz.classList.remove('hidden');
+        elEditor.value = SORT_PRESETS[algoSelect.value];
+    } else if (modName === 'tsp') {
+        elCanvas.classList.remove('hidden');
         elEditor.parentElement.style.display = 'none';
-    } else if (modName === 'gameoflife') {
-        elEditor.parentElement.style.display = 'none';
-        generateGrid(CONFIG.gridSize);
-        addGoLListeners();
+        resizeCanvas();
+        generateTSP();
+    } else {
+        elGrid.classList.remove('hidden');
+        elGrid.className = '';
+
+        if (modName === 'pathfinding') {
+            elEditor.value = PF_PRESETS.astar;
+            addPathfindingListeners();
+        } else if (modName === 'maze') {
+            elEditor.parentElement.style.display = 'none';
+        } else if (modName === 'gameoflife') {
+            elEditor.parentElement.style.display = 'none';
+            generateGrid(CONFIG.gridSize);
+            addGoLListeners();
+        }
     }
-}
-updateText();
+    updateText();
 }
 
 moduleSelect.addEventListener('change', (e) => switchModule(e.target.value));
