@@ -11,7 +11,6 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;600;700&display=swap"
         rel="stylesheet">
-
     <!-- AdSense Script -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7237384529818812"
         crossorigin="anonymous"></script>
@@ -19,171 +18,202 @@
 
 <body>
     <div class="app-container">
-        <!-- Header & Controls -->
-        <header class="toolbar">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
             <div class="brand">
-                <h1>JS <span class="highlight">Playground</span></h1>
-                <div class="module-tabs">
-                    <button class="tab-btn active" data-module="sorting" data-i18n="tab_sorting">Sorting</button>
-                    <button class="tab-btn" data-module="pathfinding" data-i18n="tab_pathfinding">Pathfinding</button>
-                </div>
-                <select id="langSelect" style="margin-left: 10px; padding: 4px; border-radius: 4px;">
-                    <option value="en">🇺🇸 EN</option>
-                    <option value="ko" selected>🇰🇷 KO</option>
-                </select>
+                <h1>JS <span class="highlight">Play</span></h1>
             </div>
 
-            <div class="controls">
+            <div class="module-list">
+                <button class="nav-btn active" data-module="sorting">
+                    <span class="icon">📊</span> <span data-i18n="tab_sorting">Sorting</span>
+                </button>
+                <button class="nav-btn" data-module="pathfinding">
+                    <span class="icon">🔍</span> <span data-i18n="tab_pathfinding">Pathfinding</span>
+                </button>
+                <div class="divider"></div>
+                <button class="nav-btn" data-module="maze">
+                    <span class="icon">🕸️</span> <span data-i18n="tab_maze">Maze Gen</span>
+                </button>
+                <button class="nav-btn" data-module="nqueens">
+                    <span class="icon">👑</span> <span data-i18n="tab_nqueens">N-Queens</span>
+                </button>
+                <button class="nav-btn" data-module="gameoflife">
+                    <span class="icon">🦠</span> <span data-i18n="tab_gameoflife">Game of Life</span>
+                </button>
+                <button class="nav-btn" data-module="tsp">
+                    <span class="icon">🗺️</span> <span data-i18n="tab_tsp">TSP</span>
+                </button>
+            </div>
+
+            <div class="bottom-settings">
+                <select id="langSelect" style="width: 100%;">
+                    <option value="en">🇺🇸 English</option>
+                    <option value="ko" selected>🇰🇷 한국어</option>
+                </select>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Top Toolbar (Contextual Controls) -->
+            <header class="toolbar">
                 <!-- Sorting Controls -->
                 <div id="controls_sorting" class="module-controls">
                     <div class="control-group mode-toggle">
-                        <label>Mode:</label>
+                        <label data-i18n="label_mode">Mode:</label>
                         <div class="toggle-switch">
                             <input type="radio" id="modeCode" name="appMode" value="code" checked>
-                            <label for="modeCode">Code</label>
+                            <label for="modeCode" data-i18n="mode_code">Code</label>
                             <input type="radio" id="modeGame" name="appMode" value="game">
-                            <label for="modeGame">Game</label>
+                            <label for="modeGame" data-i18n="mode_game">Game</label>
                         </div>
                     </div>
 
                     <div class="control-group">
-                        <label>Algo:</label>
                         <select id="algoSelect">
-                            <optgroup label="Simple (O(n²))">
-                                <option value="bubble">Bubble Sort</option>
-                                <option value="selection">Selection Sort</option>
-                                <option value="insertion">Insertion Sort</option>
-                                <option value="cocktail">Cocktail Shaker Sort</option>
+                            <optgroup label="Simple (O(n²))" data-i18n-label="opt_simple">
+                                <option value="bubble" data-i18n="algo_bubble">Bubble Sort</option>
+                                <option value="selection" data-i18n="algo_selection">Selection Sort</option>
+                                <option value="insertion" data-i18n="algo_insertion">Insertion Sort</option>
+                                <option value="cocktail" data-i18n="algo_cocktail">Cocktail Shaker Sort</option>
                             </optgroup>
-                            <optgroup label="Efficient (O(n log n))">
-                                <option value="quick">Quick Sort</option>
-                                <option value="merge">Merge Sort</option>
-                                <option value="heap">Heap Sort</option>
+                            <optgroup label="Efficient (O(n log n))" data-i18n-label="opt_efficient">
+                                <option value="quick" data-i18n="algo_quick">Quick Sort</option>
+                                <option value="merge" data-i18n="algo_merge">Merge Sort</option>
+                                <option value="heap" data-i18n="algo_heap">Heap Sort</option>
                             </optgroup>
-                            <optgroup label="Special / Fun">
-                                <option value="radix">Radix Sort (LSD)</option>
-                                <option value="bogo">Bogo Sort (The Worst)</option>
+                            <optgroup label="Special / Fun" data-i18n-label="opt_curious">
+                                <option value="radix" data-i18n="algo_radix">Radix Sort (LSD)</option>
+                                <option value="bogo" data-i18n="algo_bogo">Bogo Sort</option>
                             </optgroup>
-                            <optgroup label="User Defined">
-                                <option value="custom">Custom Script</option>
+                            <optgroup label="User Defined" data-i18n-label="opt_custom">
+                                <option value="custom" data-i18n="algo_custom">Custom Script</option>
                             </optgroup>
                         </select>
                     </div>
 
-                    <div class="control-group">
-                        <button id="btnGenerate" class="btn secondary">Shuffle</button>
-                        <button id="btnRun" class="btn primary">Run</button>
-                        <button id="btnStop" class="btn danger" disabled>Stop</button>
-                    </div>
+                    <button id="btnGenerate" class="btn secondary" data-i18n="btn_shuffle">Shuffle</button>
+                    <button id="btnRun" class="btn primary" data-i18n="btn_run">Run</button>
+                    <button id="btnStop" class="btn danger" disabled data-i18n="btn_stop">Stop</button>
 
                     <div class="control-group">
-                        <label>Size:</label>
-                        <input type="range" id="sizeRange" min="5" max="200" value="50">
+                        <label data-i18n="label_size">Size</label>
+                        <input type="range" id="sizeRange" min="5" max="200" value="50" style="width: 80px">
                     </div>
-
                     <div class="control-group">
-                        <label>Speed:</label>
-                        <input type="range" id="speedRange" min="1" max="100" value="50">
+                        <label data-i18n="label_speed">Speed</label>
+                        <input type="range" id="speedRange" min="1" max="100" value="50" style="width: 80px">
                     </div>
 
                     <div class="control-group">
                         <label class="checkbox-label">
-                            <input type="checkbox" id="imgModeCheck"> Image Mode
+                            <input type="checkbox" id="imgModeCheck"> <span data-i18n="label_img_mode">Image</span>
                         </label>
-                        <input type="file" id="imgUpload" accept="image/*" class="hidden" style="max-width: 150px;">
+                        <input type="file" id="imgUpload" accept="image/*" class="hidden"
+                            style="width: 0; height: 0; opacity: 0; overflow: hidden; position: absolute; z-index: -1;">
+                        <label for="imgUpload" class="btn secondary sm" id="lblImgUpload"
+                            style="display:none; margin-left:5px;">📂</label>
                     </div>
                 </div>
 
-                <!-- Pathfinding Controls (Hidden by default) -->
+                <!-- Pathfinding Controls -->
                 <div id="controls_pathfinding" class="module-controls hidden">
-                    <div class="control-group mode-toggle">
-                        <label>Mode:</label>
-                        <div class="toggle-switch">
-                            <input type="radio" id="pfModeCode" name="pfAppMode" value="code" checked>
-                            <label for="pfModeCode">Code</label>
-                            <input type="radio" id="pfModeGame" name="pfAppMode" value="game">
-                            <label for="pfModeGame">Game</label>
+                    <select id="pfAlgoSelect">
+                        <option value="bfs">BFS</option>
+                        <option value="dfs">DFS</option>
+                        <option value="astar">A* Search</option>
+                    </select>
+                    <button id="btnPfReset" class="btn secondary" data-i18n="btn_reset">Reset</button>
+                    <button id="btnPfRun" class="btn primary" data-i18n="btn_run">Run</button>
+                    <button id="btnPfStop" class="btn danger" disabled data-i18n="btn_stop">Stop</button>
+                </div>
+
+                <!-- Maze Controls -->
+                <div id="controls_maze" class="module-controls hidden">
+                    <button id="btnMazeGen" class="btn primary">Generate Maze (Recursive)</button>
+                </div>
+
+                <!-- N-Queens Controls -->
+                <div id="controls_nqueens" class="module-controls hidden">
+                    <label>N:</label>
+                    <input type="number" id="nQueensInput" value="8" min="4" max="12" style="width: 60px;">
+                    <button id="btnNQueensRun" class="btn primary">Solve</button>
+                </div>
+
+                <!-- Game of Life Controls -->
+                <div id="controls_gameoflife" class="module-controls hidden">
+                    <button id="btnGolStart" class="btn primary">Start</button>
+                    <button id="btnGolStop" class="btn danger">Stop</button>
+                    <button id="btnGolClear" class="btn secondary">Clear</button>
+                    <button id="btnGolRandom" class="btn secondary">Random</button>
+                </div>
+
+                <!-- TSP Controls -->
+                <div id="controls_tsp" class="module-controls hidden">
+                    <button id="btnTspRun" class="btn primary">Solve (Nearest)</button>
+                    <button id="btnTspNew" class="btn secondary">New Cities</button>
+                </div>
+            </header>
+
+            <!-- Main Workspace -->
+            <main class="workspace">
+                <!-- Code Editor Pane -->
+                <section class="pane editor-pane">
+                    <div class="pane-header">
+                        <span id="editorTitle">JavaScript Editor</span>
+                        <small id="editorSub">Available: <code>data[]</code>, <code>await swap(i,j)</code></small>
+                    </div>
+                    <textarea id="codeEditor" spellcheck="false"></textarea>
+
+                    <!-- Game Overlay -->
+                    <div id="gameOverlay" class="game-overlay hidden">
+                        <div class="game-content">
+                            <h2 data-i18n="game_title">Interactive Sort</h2>
+                            <p id="gameInstruction" data-i18n="game_instruction">Select an algorithm and click Run to
+                                start!</p>
+
+                            <div id="gameControls" class="game-controls hidden">
+                                <div class="current-step">
+                                    <span id="stepDesc">Compare A and B</span>
+                                </div>
+                                <div class="action-buttons">
+                                    <button id="btnAction1" class="btn game-btn" data-i18n="game_swap">Swap</button>
+                                    <button id="btnAction2" class="btn game-btn secondary"
+                                        data-i18n="game_pass">Pass</button>
+                                </div>
+                                <div id="feedbackMsg" class="feedback"></div>
+                            </div>
                         </div>
                     </div>
+                </section>
 
-                    <div class="control-group">
-                        <label>Algo:</label>
-                        <select id="pfAlgoSelect">
-                            <option value="bfs">BFS</option>
-                            <option value="dfs">DFS</option>
-                            <option value="astar">A* Search</option>
-                        </select>
+                <!-- Visualizer Pane -->
+                <section class="pane viz-pane">
+                    <div class="pane-header">
+                        <span id="vizTitle" data-i18n="pane_visualizer">Visualizer</span>
+                        <span id="statusText">Ready</span>
                     </div>
 
-                    <div class="control-group">
-                        <button id="btnPfReset" class="btn secondary">Reset</button>
-                        <button id="btnPfRun" class="btn primary">Run</button>
-                        <!-- Stop shared? Or separate? Let's assume shared execution engine for now or add new btn -->
-                        <button id="btnPfStop" class="btn danger" disabled>Stop</button>
-                    </div>
+                    <!-- Sorting Visualizer -->
+                    <div id="visualizerContainer"></div>
+
+                    <!-- Grid Container (Pathfinding, Maze, GameOfLife, N-Queens) -->
+                    <div id="gridContainer" class="hidden"></div>
+
+                    <!-- TSP Canvas -->
+                    <canvas id="tspCanvas" class="hidden"></canvas>
+                </section>
+            </main>
+
+            <!-- Footer / Ad Space -->
+            <footer class="ad-footer">
+                <div class="ad-container">
+                    <ins class="adsbygoogle" style="display:inline-block;width:728px;height:90px"
+                        data-ad-client="ca-pub-7237384529818812" data-ad-slot="3580735781"></ins>
                 </div>
-            </div>
-        </header>
-
-        <!-- Main Workspace -->
-        <main class="workspace">
-            <!-- Code Editor Pane -->
-            <section class="pane editor-pane">
-                <div class="pane-header">
-                    <span id="editorTitle">JavaScript Editor</span>
-                    <small id="editorSub">Available: <code>data[]</code>, <code>await swap(i,j)</code></small>
-                </div>
-                <!-- Simple Textarea for now, can upgrade to CodeMirror later if needed -->
-                <textarea id="codeEditor" spellcheck="false"></textarea>
-
-                <!-- Game Overlay (Hidden by default) -->
-                <div id="gameOverlay" class="game-overlay hidden">
-                    <div class="game-content">
-                        <h2>Interactive Sort</h2>
-                        <p id="gameInstruction">Select an algorithm and click Run to start!</p>
-
-                        <div id="gameControls" class="game-controls hidden">
-                            <div class="current-step">
-                                <span id="stepDesc">Compare A and B</span>
-                            </div>
-                            <div class="action-buttons">
-                                <button id="btnAction1" class="btn game-btn">Action 1</button>
-                                <button id="btnAction2" class="btn game-btn secondary">Action 2</button>
-                            </div>
-                            <div id="feedbackMsg" class="feedback"></div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Visualizer Pane -->
-            <section class="pane viz-pane">
-                <div class="pane-header">
-                    <span id="vizTitle">Visualizer</span>
-                    <span id="statusText">Ready</span>
-                </div>
-
-                <!-- Sorting Visualizer -->
-                <div id="visualizerContainer">
-                    <!-- Bars will be injected here by JS -->
-                </div>
-
-                <!-- Pathfinding Grid (Hidden by default) -->
-                <div id="gridContainer" class="hidden">
-                    <!-- Grid cells injected here -->
-                </div>
-            </section>
-        </main>
-
-        <!-- Footer / Ad Space -->
-        <footer class="ad-footer">
-            <div class="ad-container">
-                <!-- Ad Unit -->
-                <!-- Ad Unit: Fixed size to prevent layout shifts -->
-                <ins class="adsbygoogle" style="display:inline-block;width:728px;height:90px"
-                    data-ad-client="ca-pub-7237384529818812" data-ad-slot="3580735781"></ins>
-            </div>
-        </footer>
+            </footer>
+        </div>
     </div>
 
     <!-- AdSense Initialization Logic -->
