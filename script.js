@@ -1061,12 +1061,14 @@ const pixelBrushSize = document.getElementById('pixelBrushSize');
 const pixelColor = document.getElementById('pixelColor');
 const pixelUpload = document.getElementById('pixelUpload');
 const btnPixelHeal = document.getElementById('btnPixelHeal');
+const btnPixelScanHeal = document.getElementById('btnPixelScanHeal');
 const btnPixelReset = document.getElementById('btnPixelReset');
 
 function initPixelMaster() {
     pixelUpload.addEventListener('change', handlePixelUpload);
     btnPixelReset.addEventListener('click', resetPixelImage);
     btnPixelHeal.addEventListener('click', animatePixelHeal);
+    btnPixelScanHeal.addEventListener('click', animatePixelScanHeal);
     pixelTool.addEventListener('change', (e) => APP.pixelTool = e.target.value);
     pixelBrushSize.addEventListener('input', (e) => APP.pixelBrushSize = parseInt(e.target.value));
 
@@ -1095,6 +1097,8 @@ function initPixelMaster() {
             }
         } else if (APP.pixelTool === 'sand') {
             scatterSand(x, y);
+        } else if (APP.pixelTool === 'sort') {
+            pixelSort(x, y);
         }
     });
 }
@@ -1241,6 +1245,44 @@ function scatterSand(mx, my) {
     }
 }
 
+function pixelSort(mx, my) {
+    if (!APP.pixelOriginalData) return;
+    const ctx = elPixelCanvas.getContext('2d');
+    const width = elPixelCanvas.width;
+    const height = elPixelCanvas.height;
+    const radius = APP.pixelBrushSize;
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    // Sort pixels in a vertical span around mx
+    const startX = Math.max(0, mx - 2);
+    const endX = Math.min(width - 1, mx + 2);
+
+    for (let x = startX; x <= endX; x++) {
+        const startY = Math.max(0, my - radius);
+        const endY = Math.min(height - 1, my + radius);
+
+        const pixels = [];
+        for (let y = startY; y <= endY; y++) {
+            const i = (y * width + x) * 4;
+            pixels.push({
+                r: data[i], g: data[i + 1], b: data[i + 2], a: data[i + 3],
+                lum: 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
+            });
+        }
+
+        // Simple brightness sort
+        pixels.sort((a, b) => a.lum - b.lum);
+
+        for (let y = startY; y <= endY; y++) {
+            const i = (y * width + x) * 4;
+            const p = pixels[y - startY];
+            data[i] = p.r; data[i + 1] = p.g; data[i + 2] = p.b; data[i + 3] = p.a;
+        }
+    }
+    ctx.putImageData(imageData, 0, 0);
+}
+
 function loadRandomPixelImage() {
     const img = new Image();
     img.crossOrigin = "Anonymous";
@@ -1287,6 +1329,52 @@ function animatePixelHeal() {
         ctx.putImageData(currentImageData, 0, 0);
 
         if (progress < 1) {
+            requestAnimationFrame(frame);
+        } else {
+            APP.isRunning = false;
+            setStatus(t('status_finished'));
+        }
+    }
+
+    setStatus(t('status_running'));
+    requestAnimationFrame(frame);
+}
+
+function animatePixelScanHeal() {
+    if (APP.isRunning || !APP.pixelOriginalData) return;
+    const ctx = elPixelCanvas.getContext('2d');
+    const width = elPixelCanvas.width, height = elPixelCanvas.height;
+    const startData = ctx.getImageData(0, 0, width, height).data;
+    const targetData = APP.pixelOriginalData.data;
+    const currentImageData = ctx.createImageData(width, height);
+    const currentData = currentImageData.data;
+
+    APP.isRunning = true;
+    const duration = 2500;
+    const startTime = performance.now();
+
+    function frame(time) {
+        const elapsed = time - startTime;
+        const globalProgress = Math.min(elapsed / duration, 1);
+
+        for (let y = 0; y < height; y++) {
+            // Sequential progress: pixels at the top finish first
+            // Adjust the offset (1.5) and subtraction (y/height) for wave speed/feel
+            const rowProgress = Math.min(Math.max(globalProgress * 2.0 - (y / height), 0), 1);
+            const ease = 1 - Math.pow(1 - rowProgress, 3);
+
+            for (let x = 0; x < width; x++) {
+                const i = (y * width + x) * 4;
+                currentData[i] = startData[i] + (targetData[i] - startData[i]) * ease;
+                currentData[i + 1] = startData[i + 1] + (targetData[i + 1] - startData[i + 1]) * ease;
+                currentData[i + 2] = startData[i + 2] + (targetData[i + 2] - startData[i + 2]) * ease;
+                currentData[i + 3] = startData[i + 3] + (targetData[i + 3] - startData[i + 3]) * ease;
+            }
+        }
+
+        ctx.putImageData(currentImageData, 0, 0);
+
+        if (globalProgress < 1) {
             requestAnimationFrame(frame);
         } else {
             APP.isRunning = false;
