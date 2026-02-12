@@ -876,9 +876,6 @@ imgModeCheck.addEventListener('change', (e) => {
     APP.isImageMode = e.target.checked;
     if (APP.isImageMode) {
         imgUpload.classList.remove('hidden');
-        elEditor.classList.add('hidden'); // Hide code editor? Or just keep it.
-        // Optional: Hide editor to focus on image, but maybe user wants to code custom sort?
-        // Let's keep editor but maybe update preset?
         elStatus.textContent = "Image Mode Active";
     } else {
         imgUpload.classList.add('hidden');
