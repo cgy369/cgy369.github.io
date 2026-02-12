@@ -88,7 +88,7 @@ const TRANSLATIONS = {
     }
 };
 
-// --- Presets (Restored) ---
+// --- Presets ---
 const SORT_PRESETS = {
     bubble: `// Bubble Sort
 for (let i = 0; i < data.length; i++) {
@@ -181,9 +181,7 @@ async function mergeSort(l, r) {
     await merge(l, m, r);
 }
 await mergeSort(0, data.length - 1);`,
-    custom: `// Custom Sort
-// Use await swap(i, j) to visualize
-`
+    custom: `// Custom Sort`
 };
 
 const PF_PRESETS = {
@@ -224,9 +222,7 @@ while(stack.length > 0) {
     }
 }
 await reconstructionPath(endNode);`,
-    astar: `// A* Search
-// Simplified implementation provided in backend
-`
+    astar: `// A* Search`
 };
 
 // --- Global State ---
@@ -247,16 +243,12 @@ const APP = {
     grid: [],
     pfStart: { r: 1, c: 1 },
     pfEnd: { r: 18, c: 18 },
-    isMousePressed: false,
-    isDraggingStart: false,
-    isDraggingEnd: false,
 
     // Maze State
     mazeStack: [],
 
     // N-Queens State
     nQueensSize: 8,
-    queens: [], // Array of column changes
 
     // GoL State
     golRunning: false,
@@ -269,7 +261,7 @@ const APP = {
 // --- DOM Elements ---
 const elEditor = document.getElementById('codeEditor');
 const elStatus = document.getElementById('statusText');
-const navBtns = document.querySelectorAll('.nav-btn');
+const moduleSelect = document.getElementById('moduleSelect');
 const langSelect = document.getElementById('langSelect');
 
 // Containers
@@ -289,7 +281,7 @@ const controls = {
 
 // Sorting DOM
 const btnRun = document.getElementById('btnRun');
-const btnStop = document.getElementById('btnStop');
+const btnStop = document.getElementById('btnStop'); // Shared Stop
 const btnGenerate = document.getElementById('btnGenerate');
 const algoSelect = document.getElementById('algoSelect');
 const imgModeCheck = document.getElementById('imgModeCheck');
@@ -331,15 +323,10 @@ function resizeCanvas() {
     if (APP.module === 'tsp') drawTSP();
 }
 
-// --- Module Switching ---
+// --- Module Switching (Select Box) ---
 function switchModule(modName) {
-    if (APP.isRunning) handleStop();
+    if (APP.isRunning || APP.golRunning) handleStop();
     APP.module = modName;
-
-    navBtns.forEach(btn => {
-        if (btn.dataset.module === modName) btn.classList.add('active');
-        else btn.classList.remove('active');
-    });
 
     Object.keys(controls).forEach(key => {
         if (key === modName) controls[key].classList.remove('hidden');
@@ -349,42 +336,41 @@ function switchModule(modName) {
     elViz.classList.add('hidden');
     elGrid.classList.add('hidden');
     elCanvas.classList.add('hidden');
-    elEditor.parentElement.style.display = 'flex'; // Show editor by default
+    elEditor.parentElement.style.display = 'flex';
 
-    // Reset Listeners for Grid
     removeGridListeners();
+    btnStop.disabled = true; // Reset stop state
 
     if (modName === 'sorting') {
         elViz.classList.remove('hidden');
         elEditor.value = SORT_PRESETS[algoSelect.value];
     } else if (modName === 'tsp') {
         elCanvas.classList.remove('hidden');
-        elEditor.parentElement.style.display = 'none'; // No editor for TSP yet
+        elEditor.parentElement.style.display = 'none';
         resizeCanvas();
         generateTSP();
     } else {
-        // Grid Based Modules
         elGrid.classList.remove('hidden');
-        elGrid.className = ''; // Clear special classes
+        elGrid.className = '';
 
         if (modName === 'pathfinding') {
-            elEditor.value = PF_PRESETS.astar; // Default
+            elEditor.value = PF_PRESETS.astar;
             addPathfindingListeners();
         } else if (modName === 'maze') {
             elEditor.parentElement.style.display = 'none';
-            // Maze uses same grid structure
         } else if (modName === 'nqueens') {
             elEditor.parentElement.style.display = 'none';
-            elGrid.classList.add('nqueens-grid'); // Special styling maybe?
             generateGrid(APP.nQueensSize);
         } else if (modName === 'gameoflife') {
             elEditor.parentElement.style.display = 'none';
-            generateGrid(CONFIG.gridSize); // Standard 20x20
+            generateGrid(CONFIG.gridSize);
             addGoLListeners();
         }
     }
     updateText();
 }
+
+moduleSelect.addEventListener('change', (e) => switchModule(e.target.value));
 
 // --- Helper: Translation ---
 function t(key) { return TRANSLATIONS[APP.lang][key] || key; }
@@ -448,15 +434,23 @@ async function swap(i, j) {
     await sleep(APP.delayMs);
 }
 
-// --- SHARED HELPERS ---
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 sizeRange.addEventListener('input', generateArray);
 speedRange.addEventListener('input', (e) => APP.delayMs = 200 - (e.target.value * 1.9));
 
+// --- COMMON STOP HANDLER ---
+function handleStop() {
+    APP.shouldStop = true;
+    APP.isRunning = false;
+    APP.golRunning = false;
+    btnStop.disabled = true;
+    elStatus.textContent = t('status_stopped');
+}
+
 // --- TSP MODULE ---
 function generateTSP() {
     APP.tspCities = [];
-    const count = 15; // Number of cities
+    const count = 15;
     for (let i = 0; i < count; i++) {
         APP.tspCities.push({
             x: Math.random() * elCanvas.width,
@@ -481,7 +475,6 @@ function drawTSP(currentLine = null) {
         ctx.moveTo(c1.x, c1.y);
         ctx.lineTo(c2.x, c2.y);
     }
-    // Loop back
     const start = APP.tspCities[APP.tspPath[0]];
     const end = APP.tspCities[APP.tspPath[APP.tspPath.length - 1]];
     ctx.moveTo(end.x, end.y);
@@ -509,9 +502,9 @@ function drawTSP(currentLine = null) {
 async function solveTSP() {
     if (APP.isRunning) return;
     APP.isRunning = true; APP.shouldStop = false;
+    btnStop.disabled = false;
     setStatus('Selling...');
 
-    // Nearest Neighbor Algo for visualization
     const visited = new Set([0]);
     let path = [0];
     let curr = 0;
@@ -523,29 +516,23 @@ async function solveTSP() {
 
         for (let i = 0; i < APP.tspCities.length; i++) {
             if (!visited.has(i)) {
-                // Visual Check
                 drawTSP({ p1: APP.tspCities[curr], p2: APP.tspCities[i] });
                 await sleep(APP.delayMs);
-
                 const d = dist(APP.tspCities[curr], APP.tspCities[i]);
-                if (d < minDist) {
-                    minDist = d;
-                    nearest = i;
-                }
+                if (d < minDist) { minDist = d; nearest = i; }
             }
         }
         if (nearest !== -1) {
             visited.add(nearest);
             path.push(nearest);
             curr = nearest;
-            APP.tspPath = [...path]; // Show partial path
+            APP.tspPath = [...path];
             drawTSP();
         }
     }
-    // Complete loop
     drawTSP();
-    setStatus('Done!');
     APP.isRunning = false;
+    btnStop.disabled = true;
 }
 function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
 
@@ -581,11 +568,9 @@ function generateGrid(size = CONFIG.gridSize) {
 async function generateMaze() {
     if (APP.isRunning) return;
     APP.isRunning = true; APP.shouldStop = false;
+    btnStop.disabled = false;
 
-    // Fill grid with walls
     APP.grid.forEach(row => row.forEach(n => { n.isWall = true; n.div.classList.add('wall'); }));
-
-    // Recursive Backtracking
     let stack = [];
     let current = APP.grid[1][1];
     current.isWall = false; current.div.classList.remove('wall');
@@ -593,13 +578,12 @@ async function generateMaze() {
 
     while (stack.length > 0) {
         if (APP.shouldStop) break;
-        current.div.classList.add('active'); // Highlight head
-        await sleep(APP.delayMs > 50 ? 50 : APP.delayMs);
+        current.div.classList.add('active');
+        await sleep(50);
         current.div.classList.remove('active');
 
         let neighbors = [];
-        let dirs = [[0, 2], [0, -2], [2, 0], [-2, 0]]; // Jump 2 cells
-
+        let dirs = [[0, 2], [0, -2], [2, 0], [-2, 0]];
         for (let d of dirs) {
             let nr = current.r + d[0];
             let nc = current.c + d[1];
@@ -621,23 +605,22 @@ async function generateMaze() {
         }
     }
     APP.isRunning = false;
+    btnStop.disabled = true;
 }
 
 // --- N-QUEENS ---
 async function solveNQueens() {
     if (APP.isRunning) return;
     APP.isRunning = true; APP.shouldStop = false;
+    btnStop.disabled = false;
     const n = parseInt(nQueensInput.value);
-    generateGrid(n); // Resize grid to N x N
+    generateGrid(n);
 
-    let board = new Array(n).fill(-1); // board[col] = row
-
+    let board = new Array(n).fill(-1);
     async function backtrack(col) {
         if (APP.shouldStop) return false;
         if (col >= n) return true;
-
         for (let row = 0; row < n; row++) {
-            // Visualize Check
             APP.grid[row][col].div.classList.add('active');
             await sleep(APP.delayMs);
             APP.grid[row][col].div.classList.remove('active');
@@ -646,17 +629,13 @@ async function solveNQueens() {
                 board[col] = row;
                 APP.grid[row][col].div.textContent = '♛';
                 APP.grid[row][col].div.style.color = '#f43f5e';
-
                 if (await backtrack(col + 1)) return true;
-
-                // Backtrack
                 board[col] = -1;
                 APP.grid[row][col].div.textContent = '';
             }
         }
         return false;
     }
-
     function isSafe(board, row, col) {
         for (let i = 0; i < col; i++) {
             if (board[i] === row || Math.abs(board[i] - row) === Math.abs(i - col))
@@ -664,18 +643,18 @@ async function solveNQueens() {
         }
         return true;
     }
-
     await backtrack(0);
     APP.isRunning = false;
+    btnStop.disabled = true;
 }
 
 // --- GAME OF LIFE ---
 async function runGameOfLife() {
     if (APP.golRunning) return;
     APP.golRunning = true;
-    while (APP.golRunning) {
+    btnStop.disabled = false;
+    while (APP.golRunning && !APP.shouldStop) {
         let nextState = APP.grid.map(row => row.map(n => n.isAlive));
-
         for (let r = 0; r < CONFIG.gridSize; r++) {
             for (let c = 0; c < CONFIG.gridSize; c++) {
                 let neighbors = 0;
@@ -686,7 +665,6 @@ async function runGameOfLife() {
                         if (nr >= 0 && nr < CONFIG.gridSize && nc >= 0 && nc < CONFIG.gridSize && APP.grid[nr][nc].isAlive) neighbors++;
                     }
                 }
-
                 if (APP.grid[r][c].isAlive) {
                     if (neighbors < 2 || neighbors > 3) nextState[r][c] = false;
                 } else {
@@ -694,23 +672,20 @@ async function runGameOfLife() {
                 }
             }
         }
-
-        // Update Grid
         for (let r = 0; r < CONFIG.gridSize; r++) {
             for (let c = 0; c < CONFIG.gridSize; c++) {
                 APP.grid[r][c].isAlive = nextState[r][c];
-                if (APP.grid[r][c].isAlive) APP.grid[r][c].div.classList.add('start'); // Use start color for life
+                if (APP.grid[r][c].isAlive) APP.grid[r][c].div.classList.add('start');
                 else APP.grid[r][c].div.classList.remove('start');
             }
         }
         await sleep(APP.delayMs);
     }
+    btnStop.disabled = true;
 }
 
 // --- EVENT HANDLERS ---
 function addPathfindingListeners() {
-    // ... (Keep existing mouse events logic) ...
-    // Simplified for this overwrite:
     APP.grid.forEach(row => row.forEach(n => {
         n.div.onclick = () => {
             if (APP.module !== 'pathfinding') return;
@@ -728,26 +703,29 @@ function addGoLListeners() {
     }));
 }
 function removeGridListeners() {
-    // In a real app, removeEventListeners, but ensuring we overwrite 'onclick' works too
     APP.grid.forEach(row => row.forEach(n => n.div.onclick = null));
 }
 function updateStartNode(r, c, f) { APP.grid[APP.pfStart.r][APP.pfStart.c].div.classList.remove('start'); APP.pfStart = { r, c }; APP.grid[r][c].div.classList.add('start'); }
 function updateEndNode(r, c, f) { APP.grid[APP.pfEnd.r][APP.pfEnd.c].div.classList.remove('end'); APP.pfEnd = { r, c }; APP.grid[r][c].div.classList.add('end'); }
-function handleStop() { APP.shouldStop = true; APP.isRunning = false; APP.golRunning = false; }
+function setStatus(msg) { elStatus.textContent = msg; }
 
 // --- Buttons ---
 btnRun.addEventListener('click', () => {
-    // Run Sorting JS Code
     const code = elEditor.value;
     const userFunc = new Function('data', 'swap', 'renderArray', 'CONFIG', 'APP', `return (async () => { ${code} })()`);
     APP.isRunning = true; APP.shouldStop = false;
-    userFunc(APP.sortData, swap, renderArray, CONFIG, APP).then(() => { APP.isRunning = false; status('Done'); });
+    btnStop.disabled = false;
+    userFunc(APP.sortData, swap, renderArray, CONFIG, APP).then(() => {
+        APP.isRunning = false;
+        setStatus(t('status_finished'));
+        btnStop.disabled = true;
+    });
 });
 btnMazeGen.addEventListener('click', generateMaze);
 btnNQueensRun.addEventListener('click', solveNQueens);
-nQueensInput.addEventListener('change', () => solveNQueens()); // Auto run/reset
+nQueensInput.addEventListener('change', () => solveNQueens());
 btnGolStart.addEventListener('click', runGameOfLife);
-btnGolStop.addEventListener('click', () => APP.golRunning = false);
+btnGolStop.addEventListener('click', () => { APP.golRunning = false; btnStop.disabled = true; });
 btnGolClear.addEventListener('click', () => { APP.golRunning = false; generateGrid(); addGoLListeners(); });
 btnGolRandom.addEventListener('click', () => {
     generateGrid(); addGoLListeners();

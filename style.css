@@ -1,7 +1,6 @@
 :root {
     --bg-dark: #0f172a;
     --bg-panel: #1e293b;
-    --bg-sidebar: #020617;
     --text-main: #e2e8f0;
     --text-muted: #94a3b8;
     --primary: #3b82f6;
@@ -39,8 +38,8 @@ body {
 
 .app-container {
     display: flex;
-    flex-direction: row;
-    /* Sidebar + Main */
+    flex-direction: column;
+    /* Reverted to Column */
     height: 100%;
 }
 
@@ -48,109 +47,59 @@ body {
     display: none !important;
 }
 
-/* --- SIDEBAR --- */
-.sidebar {
-    width: 240px;
-    background-color: var(--bg-sidebar);
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
+/* --- TOOLBAR / HEADER --- */
+.toolbar {
+    background-color: var(--bg-panel);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1rem 2rem;
     display: flex;
-    flex-direction: column;
-    padding: 1.5rem;
-    flex-shrink: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    height: auto;
+    /* Let it grow if needed */
+    min-height: 64px;
 }
 
 .brand {
-    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
 }
 
 .brand h1 {
     font-size: 1.5rem;
     font-weight: 700;
+    white-space: nowrap;
 }
 
 .brand .highlight {
     color: var(--primary);
 }
 
-.module-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    flex: 1;
-}
-
-.divider {
-    height: 1px;
-    background: rgba(255, 255, 255, 0.1);
-    margin: 0.5rem 0;
-}
-
-.nav-btn {
-    background: transparent;
-    border: none;
-    padding: 0.8rem 1rem;
-    font-size: 0.95rem;
-    color: var(--text-muted);
-    border-radius: 8px;
+/* Top Module Select */
+.module-select {
+    font-size: 1rem;
+    padding: 0.4rem 0.8rem;
+    background: var(--bg-dark);
+    color: var(--accent);
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
     cursor: pointer;
-    text-align: left;
+    min-width: 140px;
+}
+
+.controls {
     display: flex;
+    gap: 2rem;
     align-items: center;
-    gap: 0.8rem;
-    transition: all 0.2s;
 }
 
-.nav-btn .icon {
-    font-size: 1.2rem;
-    opacity: 0.7;
-}
-
-.nav-btn:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text-main);
-}
-
-.nav-btn.active {
-    background-color: var(--primary);
-    color: white;
-    font-weight: 500;
-}
-
-.nav-btn.active .icon {
-    opacity: 1;
-}
-
-.bottom-settings {
-    margin-top: auto;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-top: 1rem;
-}
-
-/* --- MAIN CONTENT --- */
-.main-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-}
-
-/* Toolbar (Top Bar) */
-.toolbar {
-    background-color: var(--bg-panel);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 0.8rem 1.5rem;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-/* Controls */
 .module-controls {
     display: flex;
     gap: 1.5rem;
     align-items: center;
-    width: 100%;
 }
 
 .control-group {
@@ -160,7 +109,7 @@ body {
 }
 
 .control-group label {
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     color: var(--text-muted);
     white-space: nowrap;
 }
@@ -169,7 +118,7 @@ body {
 select,
 button,
 input[type="number"] {
-    padding: 0.4rem 0.8rem;
+    padding: 0.5rem 1rem;
     border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.05);
@@ -182,7 +131,7 @@ input[type="number"] {
 
 /* Dropdown Menu Styling */
 select {
-    background-color: var(--bg-dark);
+    background-color: var(--bg-panel);
 }
 
 select option {
@@ -191,8 +140,9 @@ select option {
 }
 
 select optgroup {
-    background-color: var(--bg-dark);
+    background-color: var(--bg-panel);
     color: var(--accent);
+    font-weight: 700;
 }
 
 button:hover:not(:disabled) {
@@ -255,7 +205,6 @@ button:disabled {
     display: flex;
     flex-direction: column;
     flex: 1;
-    position: relative;
 }
 
 .pane-header {
@@ -273,7 +222,7 @@ button:disabled {
     background-color: transparent;
     color: var(--text-main);
     font-family: var(--font-mono);
-    font-size: 13px;
+    font-size: 14px;
     line-height: 1.5;
     padding: 1rem;
     border: none;
@@ -287,13 +236,12 @@ button:disabled {
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    padding-top: 1rem;
+    padding-top: 2rem;
 }
 
 .bar {
     background-color: var(--bar-default);
-    margin: 0;
-    /* Handled by JS */
+    margin: 0 1px;
     border-top-left-radius: 4px;
     border-top-right-radius: 4px;
     transition: height 0.1s ease;
@@ -324,6 +272,11 @@ button:disabled {
     background-color: var(--node-empty);
     border: 1px solid rgba(255, 255, 255, 0.05);
     cursor: pointer;
+    transition: background-color 0.1s;
+}
+
+.node:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .node.wall {
@@ -383,6 +336,16 @@ button:disabled {
     overflow: hidden;
 }
 
+.ad-container {
+    width: 100%;
+    max-width: 728px;
+    height: 90px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
 /* Game Overlay */
 .game-overlay {
     position: absolute;
@@ -420,6 +383,12 @@ button:disabled {
     color: var(--accent);
 }
 
+.game-content p {
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+}
+
 .game-controls {
     background: var(--bg-panel);
     padding: 1.5rem;
@@ -428,10 +397,71 @@ button:disabled {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     width: 100%;
     text-align: center;
+    transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
-.game-controls.hidden {
-    display: none;
+.current-step {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.8rem;
+    justify-content: center;
+    margin-bottom: 0.8rem;
+}
+
+.btn.game-btn {
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+    min-width: 100px;
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.btn.game-btn.secondary {
+    background-color: transparent;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn.game-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.feedback {
+    min-height: 1.2rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.feedback.correct {
+    color: var(--success);
+}
+
+.feedback.wrong {
+    color: var(--danger);
+    animation: shake 0.4s ease-in-out;
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-4px);
+    }
+
+    75% {
+        transform: translateX(4px);
+    }
 }
 
 /* Checkbox Toggle */
@@ -446,22 +476,36 @@ button:disabled {
 
 .mode-toggle {
     background: rgba(0, 0, 0, 0.2);
-    padding: 2px 4px;
+    padding: 0.25rem;
     border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .toggle-switch {
     display: flex;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    padding: 2px;
+}
+
+.toggle-switch input[type="radio"] {
+    display: none;
 }
 
 .toggle-switch label {
-    padding: 4px 8px;
+    padding: 0.3rem 0.6rem;
     border-radius: 4px;
     cursor: pointer;
     font-size: 0.8rem;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    user-select: none;
 }
 
-.toggle-switch input:checked+label {
-    background: var(--primary);
+.toggle-switch input[type="radio"]:checked+label {
+    background-color: var(--primary);
     color: white;
+    font-weight: 600;
 }

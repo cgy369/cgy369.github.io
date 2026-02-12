@@ -18,46 +18,28 @@
 
 <body>
     <div class="app-container">
-        <!-- Sidebar Navigation -->
-        <nav class="sidebar">
+        <!-- Top Toolbar -->
+        <header class="toolbar">
             <div class="brand">
                 <h1>JS <span class="highlight">Play</span></h1>
-            </div>
 
-            <div class="module-list">
-                <button class="nav-btn active" data-module="sorting">
-                    <span class="icon">📊</span> <span data-i18n="tab_sorting">Sorting</span>
-                </button>
-                <button class="nav-btn" data-module="pathfinding">
-                    <span class="icon">🔍</span> <span data-i18n="tab_pathfinding">Pathfinding</span>
-                </button>
-                <div class="divider"></div>
-                <button class="nav-btn" data-module="maze">
-                    <span class="icon">🕸️</span> <span data-i18n="tab_maze">Maze Gen</span>
-                </button>
-                <button class="nav-btn" data-module="nqueens">
-                    <span class="icon">👑</span> <span data-i18n="tab_nqueens">N-Queens</span>
-                </button>
-                <button class="nav-btn" data-module="gameoflife">
-                    <span class="icon">🦠</span> <span data-i18n="tab_gameoflife">Game of Life</span>
-                </button>
-                <button class="nav-btn" data-module="tsp">
-                    <span class="icon">🗺️</span> <span data-i18n="tab_tsp">TSP</span>
-                </button>
-            </div>
+                <!-- MODULE SELECTOR (Replaces Sidebar) -->
+                <select id="moduleSelect" class="module-select">
+                    <option value="sorting" data-i18n="tab_sorting">Sorting</option>
+                    <option value="pathfinding" data-i18n="tab_pathfinding">Pathfinding</option>
+                    <option value="maze" data-i18n="tab_maze">Maze Gen</option>
+                    <option value="nqueens" data-i18n="tab_nqueens">N-Queens</option>
+                    <option value="gameoflife" data-i18n="tab_gameoflife">Game of Life</option>
+                    <option value="tsp" data-i18n="tab_tsp">TSP</option>
+                </select>
 
-            <div class="bottom-settings">
-                <select id="langSelect" style="width: 100%;">
-                    <option value="en">🇺🇸 English</option>
-                    <option value="ko" selected>🇰🇷 한국어</option>
+                <select id="langSelect" style="margin-left: 10px; padding: 4px; border-radius: 4px;">
+                    <option value="en">🇺🇸 EN</option>
+                    <option value="ko" selected>🇰🇷 KO</option>
                 </select>
             </div>
-        </nav>
 
-        <!-- Main Content Area -->
-        <div class="main-content">
-            <!-- Top Toolbar (Contextual Controls) -->
-            <header class="toolbar">
+            <div class="controls">
                 <!-- Sorting Controls -->
                 <div id="controls_sorting" class="module-controls">
                     <div class="control-group mode-toggle">
@@ -93,9 +75,12 @@
                         </select>
                     </div>
 
-                    <button id="btnGenerate" class="btn secondary" data-i18n="btn_shuffle">Shuffle</button>
-                    <button id="btnRun" class="btn primary" data-i18n="btn_run">Run</button>
-                    <button id="btnStop" class="btn danger" disabled data-i18n="btn_stop">Stop</button>
+                    <div class="control-group">
+                        <button id="btnGenerate" class="btn secondary" data-i18n="btn_shuffle">Shuffle</button>
+                        <button id="btnRun" class="btn primary" data-i18n="btn_run">Run</button>
+                        <!-- Stop Button: Shared ID, specific logic -->
+                        <button id="btnStop" class="btn danger" disabled data-i18n="btn_stop">Stop</button>
+                    </div>
 
                     <div class="control-group">
                         <label data-i18n="label_size">Size</label>
@@ -126,12 +111,13 @@
                     </select>
                     <button id="btnPfReset" class="btn secondary" data-i18n="btn_reset">Reset</button>
                     <button id="btnPfRun" class="btn primary" data-i18n="btn_run">Run</button>
-                    <button id="btnPfStop" class="btn danger" disabled data-i18n="btn_stop">Stop</button>
+                    <!-- Shared Stop Button Used -->
                 </div>
 
                 <!-- Maze Controls -->
                 <div id="controls_maze" class="module-controls hidden">
                     <button id="btnMazeGen" class="btn primary">Generate Maze (Recursive)</button>
+                    <!-- Stop Button Shared -->
                 </div>
 
                 <!-- N-Queens Controls -->
@@ -154,66 +140,66 @@
                     <button id="btnTspRun" class="btn primary">Solve (Nearest)</button>
                     <button id="btnTspNew" class="btn secondary">New Cities</button>
                 </div>
-            </header>
+            </div>
+        </header>
 
-            <!-- Main Workspace -->
-            <main class="workspace">
-                <!-- Code Editor Pane -->
-                <section class="pane editor-pane">
-                    <div class="pane-header">
-                        <span id="editorTitle">JavaScript Editor</span>
-                        <small id="editorSub">Available: <code>data[]</code>, <code>await swap(i,j)</code></small>
-                    </div>
-                    <textarea id="codeEditor" spellcheck="false"></textarea>
+        <!-- Main Workspace -->
+        <main class="workspace">
+            <!-- Code Editor Pane -->
+            <section class="pane editor-pane">
+                <div class="pane-header">
+                    <span id="editorTitle">JavaScript Editor</span>
+                    <small id="editorSub">Available: <code>data[]</code>, <code>await swap(i,j)</code></small>
+                </div>
+                <textarea id="codeEditor" spellcheck="false"></textarea>
 
-                    <!-- Game Overlay -->
-                    <div id="gameOverlay" class="game-overlay hidden">
-                        <div class="game-content">
-                            <h2 data-i18n="game_title">Interactive Sort</h2>
-                            <p id="gameInstruction" data-i18n="game_instruction">Select an algorithm and click Run to
-                                start!</p>
+                <!-- Game Overlay -->
+                <div id="gameOverlay" class="game-overlay hidden">
+                    <div class="game-content">
+                        <h2 data-i18n="game_title">Interactive Sort</h2>
+                        <p id="gameInstruction" data-i18n="game_instruction">Select an algorithm and click Run to start!
+                        </p>
 
-                            <div id="gameControls" class="game-controls hidden">
-                                <div class="current-step">
-                                    <span id="stepDesc">Compare A and B</span>
-                                </div>
-                                <div class="action-buttons">
-                                    <button id="btnAction1" class="btn game-btn" data-i18n="game_swap">Swap</button>
-                                    <button id="btnAction2" class="btn game-btn secondary"
-                                        data-i18n="game_pass">Pass</button>
-                                </div>
-                                <div id="feedbackMsg" class="feedback"></div>
+                        <div id="gameControls" class="game-controls hidden">
+                            <div class="current-step">
+                                <span id="stepDesc">Compare A and B</span>
                             </div>
+                            <div class="action-buttons">
+                                <button id="btnAction1" class="btn game-btn" data-i18n="game_swap">Swap</button>
+                                <button id="btnAction2" class="btn game-btn secondary"
+                                    data-i18n="game_pass">Pass</button>
+                            </div>
+                            <div id="feedbackMsg" class="feedback"></div>
                         </div>
                     </div>
-                </section>
-
-                <!-- Visualizer Pane -->
-                <section class="pane viz-pane">
-                    <div class="pane-header">
-                        <span id="vizTitle" data-i18n="pane_visualizer">Visualizer</span>
-                        <span id="statusText">Ready</span>
-                    </div>
-
-                    <!-- Sorting Visualizer -->
-                    <div id="visualizerContainer"></div>
-
-                    <!-- Grid Container (Pathfinding, Maze, GameOfLife, N-Queens) -->
-                    <div id="gridContainer" class="hidden"></div>
-
-                    <!-- TSP Canvas -->
-                    <canvas id="tspCanvas" class="hidden"></canvas>
-                </section>
-            </main>
-
-            <!-- Footer / Ad Space -->
-            <footer class="ad-footer">
-                <div class="ad-container">
-                    <ins class="adsbygoogle" style="display:inline-block;width:728px;height:90px"
-                        data-ad-client="ca-pub-7237384529818812" data-ad-slot="3580735781"></ins>
                 </div>
-            </footer>
-        </div>
+            </section>
+
+            <!-- Visualizer Pane -->
+            <section class="pane viz-pane">
+                <div class="pane-header">
+                    <span id="vizTitle" data-i18n="pane_visualizer">Visualizer</span>
+                    <span id="statusText">Ready</span>
+                </div>
+
+                <!-- Sorting Visualizer -->
+                <div id="visualizerContainer"></div>
+
+                <!-- Grid Container (Pathfinding, Maze, GameOfLife, N-Queens) -->
+                <div id="gridContainer" class="hidden"></div>
+
+                <!-- TSP Canvas -->
+                <canvas id="tspCanvas" class="hidden"></canvas>
+            </section>
+        </main>
+
+        <!-- Footer / Ad Space -->
+        <footer class="ad-footer">
+            <div class="ad-container">
+                <ins class="adsbygoogle" style="display:inline-block;width:728px;height:90px"
+                    data-ad-client="ca-pub-7237384529818812" data-ad-slot="3580735781"></ins>
+            </div>
+        </footer>
     </div>
 
     <!-- AdSense Initialization Logic -->
