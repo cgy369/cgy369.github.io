@@ -140,8 +140,16 @@
 
                 <!-- Pixel Master Controls -->
                 <div id="controls_pixel" class="module-controls hidden">
+                    <select id="pixelTool" class="btn tertiary" style="padding: 4px;">
+                        <option value="mask">Mask (Global)</option>
+                        <option value="smudge">Smudge (Drag)</option>
+                    </select>
                     <input type="color" id="pixelColor" value="#f43f5e" style="height: 38px; cursor: pointer;">
-                    <label for="pixelUpload" id="lblPixelUpload" class="btn secondary">Upload Image</label>
+
+                    <label style="color: white; font-size: 12px; margin-left: 10px;">Size:</label>
+                    <input type="range" id="pixelBrushSize" min="5" max="100" value="30" style="width: 80px;">
+
+                    <label for="pixelUpload" id="lblPixelUpload" class="btn secondary">Upload</label>
                     <input type="file" id="pixelUpload" class="hidden" accept="image/*">
                     <button id="btnPixelReset" class="btn tertiary">Reset</button>
                 </div>

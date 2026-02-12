@@ -288,7 +288,10 @@ const APP = {
     tspPath: [],
     // Pixel
     pixelOriginalData: null,
-    pixelAction: 'remove' // 'remove' or 'replace'
+    pixelAction: 'remove', // 'remove' or 'replace'
+    pixelTool: 'mask',     // 'mask' or 'smudge'
+    pixelBrushSize: 30,
+    lastMousePos: { x: 0, y: 0 }
 };
 
 // --- DOM Elements ---
@@ -379,52 +382,49 @@ function resizeCanvas() {
 }
 
 // --- Module Switching (Select Box) ---
-function switchModule(modName) {
-    if (APP.isRunning || APP.golRunning) handleStop();
-    APP.module = modName;
+// Clean up overlays and previous module artifacts
+if (typeof gameOverlay !== 'undefined') gameOverlay.classList.add('hidden');
 
-    Object.keys(controls).forEach(key => {
-        if (key === modName) controls[key].classList.remove('hidden');
-        else controls[key].classList.add('hidden');
-    });
+elViz.classList.add('hidden');
+elGrid.classList.add('hidden');
+elCanvas.classList.add('hidden');
+elPixelCanvas.classList.add('hidden');
+elEditor.parentElement.style.display = 'flex';
 
-    elViz.classList.add('hidden');
-    elGrid.classList.add('hidden');
-    elCanvas.classList.add('hidden');
-    elEditor.parentElement.style.display = 'flex';
+removeGridListeners();
+btnStop.disabled = true;
 
-    removeGridListeners();
-    btnStop.disabled = true; // Reset stop state
+if (modName === 'sorting') {
+    elViz.classList.remove('hidden');
+    elEditor.value = SORT_PRESETS[algoSelect.value];
+    if (APP.sortMode === 'game') gameOverlay.classList.remove('hidden');
+} else if (modName === 'tsp') {
+    elCanvas.classList.remove('hidden');
+    elEditor.parentElement.style.display = 'none';
+    resizeCanvas();
+    generateTSP();
+} else if (modName === 'pixel') {
+    elPixelCanvas.classList.remove('hidden');
+    elEditor.parentElement.style.display = 'none';
+} else {
+    // Grid-based modules (Maze, Pathfinding, GoL)
+    elGrid.classList.remove('hidden');
+    elGrid.className = '';
 
-    if (modName === 'sorting') {
-        elViz.classList.remove('hidden');
-        elEditor.value = SORT_PRESETS[algoSelect.value];
-    } else if (modName === 'tsp') {
-        elCanvas.classList.remove('hidden');
+    if (modName === 'pathfinding') {
+        elEditor.value = PF_PRESETS.astar;
+        addPathfindingListeners();
+        updatePathfindingNodes();
+    } else if (modName === 'maze') {
         elEditor.parentElement.style.display = 'none';
-        resizeCanvas();
-        generateTSP();
-    } else {
-        elGrid.classList.remove('hidden');
-        elGrid.className = '';
-
-        if (modName === 'pathfinding') {
-            elEditor.value = PF_PRESETS.astar;
-            addPathfindingListeners();
-            // Restore Start/End Visuals (using current APP state)
-            updatePathfindingNodes();
-        } else if (modName === 'maze') {
-            elEditor.parentElement.style.display = 'none';
-        } else if (modName === 'pixel') {
-            elPixelCanvas.classList.remove('hidden');
-            elEditor.parentElement.style.display = 'none';
-        } else if (modName === 'gameoflife') {
-            elEditor.parentElement.style.display = 'none';
-            generateGrid(CONFIG.gridSize);
-            addGoLListeners();
-        }
+        // Do NOT re-generate grid to preserve existing maze if switching from PF
+    } else if (modName === 'gameoflife') {
+        elEditor.parentElement.style.display = 'none';
+        generateGrid(CONFIG.gridSize);
+        addGoLListeners();
     }
-    updateText();
+}
+updateText();
 }
 
 moduleSelect.addEventListener('change', (e) => switchModule(e.target.value));
@@ -1044,6 +1044,8 @@ imgUpload.addEventListener('change', (e) => {
 });
 
 // --- PIXEL MASTER MODULE ---
+const pixelTool = document.getElementById('pixelTool');
+const pixelBrushSize = document.getElementById('pixelBrushSize');
 const pixelColor = document.getElementById('pixelColor');
 const pixelUpload = document.getElementById('pixelUpload');
 const btnPixelReset = document.getElementById('btnPixelReset');
@@ -1051,7 +1053,35 @@ const btnPixelReset = document.getElementById('btnPixelReset');
 function initPixelMaster() {
     pixelUpload.addEventListener('change', handlePixelUpload);
     btnPixelReset.addEventListener('click', resetPixelImage);
-    elPixelCanvas.addEventListener('mousedown', handlePixelClick);
+    pixelTool.addEventListener('change', (e) => APP.pixelTool = e.target.value);
+    pixelBrushSize.addEventListener('input', (e) => APP.pixelBrushSize = parseInt(e.target.value));
+
+    elPixelCanvas.addEventListener('mousedown', (e) => {
+        APP.isMouseDown = true;
+        updateLastMousePos(e);
+        if (APP.pixelTool === 'mask') handlePixelClick(e);
+    });
+
+    elPixelCanvas.addEventListener('mousemove', (e) => {
+        if (!APP.isMouseDown || APP.pixelTool !== 'smudge') return;
+        const rect = elPixelCanvas.getBoundingClientRect();
+        const x = Math.floor((e.clientX - rect.left) * (elPixelCanvas.width / rect.width));
+        const y = Math.floor((e.clientY - rect.top) * (elPixelCanvas.height / rect.height));
+
+        const dx = x - APP.lastMousePos.x;
+        const dy = y - APP.lastMousePos.y;
+
+        if (Math.hypot(dx, dy) > 1) {
+            smudgePixels(x, y, dx, dy);
+            updateLastMousePos(e);
+        }
+    });
+}
+
+function updateLastMousePos(e) {
+    const rect = elPixelCanvas.getBoundingClientRect();
+    APP.lastMousePos.x = Math.floor((e.clientX - rect.left) * (elPixelCanvas.width / rect.width));
+    APP.lastMousePos.y = Math.floor((e.clientY - rect.top) * (elPixelCanvas.height / rect.height));
 }
 
 function handlePixelUpload(e) {
@@ -1082,7 +1112,7 @@ function resetPixelImage() {
 }
 
 function handlePixelClick(e) {
-    if (APP.module !== 'pixel' || !APP.pixelOriginalData) return;
+    if (APP.module !== 'pixel' || !APP.pixelOriginalData || APP.pixelTool !== 'mask') return;
     const rect = elPixelCanvas.getBoundingClientRect();
     const x = Math.floor((e.clientX - rect.left) * (elPixelCanvas.width / rect.width));
     const y = Math.floor((e.clientY - rect.top) * (elPixelCanvas.height / rect.height));
@@ -1116,6 +1146,47 @@ function handlePixelClick(e) {
                 data[i + 3] = 0; // Transparent
             } else {
                 data[i] = r; data[i + 1] = g; data[i + 2] = b; data[i + 3] = 255;
+            }
+        }
+    }
+    ctx.putImageData(imageData, 0, 0);
+}
+
+function smudgePixels(centerX, centerY, dx, dy) {
+    const ctx = elPixelCanvas.getContext('2d');
+    const radius = APP.pixelBrushSize;
+    const width = elPixelCanvas.width;
+    const height = elPixelCanvas.height;
+
+    // We pull high-res data to manipulate
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+    const copy = new Uint8ClampedArray(data);
+
+    const r2 = radius * radius;
+
+    for (let y = centerY - radius; y <= centerY + radius; y++) {
+        for (let x = centerX - radius; x <= centerX + radius; x++) {
+            if (x < 0 || x >= width || y < 0 || y >= height) continue;
+
+            const dist2 = (x - centerX) ** 2 + (y - centerY) ** 2;
+            if (dist2 < r2) {
+                // Strength falls off towards the edge of the brush
+                const strength = 1 - Math.sqrt(dist2) / radius;
+
+                // Sample from the direction opposite to movement
+                const sx = Math.round(x - dx * strength);
+                const sy = Math.round(y - dy * strength);
+
+                if (sx >= 0 && sx < width && sy >= 0 && sy < height) {
+                    const targetIdx = (y * width + x) * 4;
+                    const sourceIdx = (sy * width + sx) * 4;
+
+                    data[targetIdx] = copy[sourceIdx];
+                    data[targetIdx + 1] = copy[sourceIdx + 1];
+                    data[targetIdx + 2] = copy[sourceIdx + 2];
+                    data[targetIdx + 3] = copy[sourceIdx + 3];
+                }
             }
         }
     }
