@@ -1115,10 +1115,7 @@ function initPixelMaster() {
                 smudgePixels(x, y, dx, dy);
                 updateLastMousePos(e);
             }
-        } else if (APP.pixelTool === 'sand') {
             scatterSand(x, y);
-        } else if (APP.pixelTool === 'sort') {
-            pixelSort(x, y);
         }
     });
 }
@@ -1444,6 +1441,16 @@ function animatePixelHeal() {
 
     setStatus(t('status_running'));
     requestAnimationFrame(frame);
+}
+
+// Editor Toggle for Mobile
+const btnEditorToggle = document.getElementById('btnEditorToggle');
+if (btnEditorToggle) {
+    btnEditorToggle.addEventListener('click', () => {
+        const pane = document.querySelector('.editor-pane');
+        pane.classList.toggle('collapsed');
+        btnEditorToggle.textContent = pane.classList.contains('collapsed') ? 'Show Editor' : 'Hide Editor';
+    });
 }
 
 // Start

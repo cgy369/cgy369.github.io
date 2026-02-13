@@ -144,7 +144,6 @@
                         <option value="mask">Mask (Global)</option>
                         <option value="smudge">Smudge (Drag)</option>
                         <option value="sand">Sand (Scatter)</option>
-                        <option value="sort">Sort (Glitch)</option>
                     </select>
                     <input type="color" id="pixelColor" value="#f43f5e" style="height: 38px; cursor: pointer;">
 
@@ -165,6 +164,7 @@
             <section class="pane editor-pane">
                 <div class="pane-header">
                     <span id="editorTitle">JavaScript Editor</span>
+                    <button id="btnEditorToggle" class="mobile-toggle">Toggle Editor</button>
                     <small id="editorSub">Available: <code>data[]</code>, <code>await swap(i,j)</code></small>
                 </div>
                 <textarea id="codeEditor" spellcheck="false"></textarea>
