@@ -1076,15 +1076,20 @@ const pixelBrushSize = document.getElementById('pixelBrushSize');
 const pixelColor = document.getElementById('pixelColor');
 const pixelUpload = document.getElementById('pixelUpload');
 const btnPixelHeal = document.getElementById('btnPixelHeal');
-const btnPixelScanHeal = document.getElementById('btnPixelScanHeal');
 const btnPixelReset = document.getElementById('btnPixelReset');
 
 function initPixelMaster() {
     pixelUpload.addEventListener('change', handlePixelUpload);
     btnPixelReset.addEventListener('click', resetPixelImage);
     btnPixelHeal.addEventListener('click', animatePixelHeal);
-    btnPixelScanHeal.addEventListener('click', animatePixelScanHeal);
-    pixelTool.addEventListener('change', (e) => APP.pixelTool = e.target.value);
+    pixelTool.addEventListener('change', (e) => {
+        APP.pixelTool = e.target.value;
+        if (APP.pixelTool === 'sand') {
+            const ctx = elPixelCanvas.getContext('2d');
+            ctx.clearRect(0, 0, elPixelCanvas.width, elPixelCanvas.height);
+            APP.pixelParticles = [];
+        }
+    });
     pixelBrushSize.addEventListener('input', (e) => APP.pixelBrushSize = parseInt(e.target.value));
 
     // Random Image Default
@@ -1243,40 +1248,66 @@ function scatterSand(mx, my) {
     if (!APP.pixelOriginalData) return;
     const ctx = elPixelCanvas.getContext('2d');
     const radius = APP.pixelBrushSize;
-    const density = 25; // Grains per move
+    const density = 30;
     const origData = APP.pixelOriginalData.data;
     const w = elPixelCanvas.width;
     const h = elPixelCanvas.height;
 
     for (let i = 0; i < density; i++) {
+        // 1. Mystery Sampling: Pick a random coordinate from the ENTIRE image
+        const sx = Math.floor(Math.random() * w);
+        const sy = Math.floor(Math.random() * h);
+        const idx = (sy * w + sx) * 4;
+
+        if (origData[idx + 3] === 0) continue;
+
+        // 2. Scattered destination around the mouse (relative to mx, my)
         const angle = Math.random() * Math.PI * 2;
-        const r = Math.sqrt(Math.random()) * radius;
+        const r = Math.sqrt(Math.random()) * radius * 1.5;
+        const dx = mx + Math.cos(angle) * r;
+        const dy = my + Math.sin(angle) * r;
 
-        // Destination: Where it's sprayed
-        const dx = Math.floor(mx + Math.cos(angle) * r);
-        const dy = Math.floor(my + Math.sin(angle) * r);
+        // 3. Grain Data
+        const grain = {
+            color: `rgba(${origData[idx]},${origData[idx + 1]},${origData[idx + 2]},${origData[idx + 3] / 255})`,
+            cur: { x: mx, y: my },  // Start at exactly the mouse click point
+            land: { x: dx, y: dy }, // Fly out to scatter spot
+            tar: { x: sx, y: sy },  // Original home coordinate
+            p: 0
+        };
 
-        // Source: Pick a random point near the mouse to "take" from
-        // Or better yet, sample from the source image at the SAME coordinate
-        // to make it look like the image is being "broken" at that spot.
-        const sx = dx, sy = dy;
+        APP.pixelParticles.push(grain);
+    }
 
-        if (sx >= 0 && sx < w && sy >= 0 && sy < h) {
-            const idx = (sy * w + sx) * 4;
-            const pr = origData[idx], pg = origData[idx + 1], pb = origData[idx + 2], pa = origData[idx + 3];
+    if (!APP.isRunning) renderSpray();
+}
 
-            // Record grain
-            APP.pixelParticles.push({
-                color: `rgba(${pr},${pg},${pb},${pa / 255})`,
-                cur: { x: dx, y: dy },
-                tar: { x: sx, y: sy }
-            });
+function renderSpray() {
+    if (APP.pixelParticles.length === 0 || APP.isRunning) return;
+    const ctx = elPixelCanvas.getContext('2d');
+    const w = elPixelCanvas.width, h = elPixelCanvas.height;
 
-            // Draw grain
-            ctx.fillStyle = `rgba(${pr},${pg},${pb},${pa / 255})`;
-            ctx.fillRect(dx, dy, 2, 2);
+    // Check if any particles are still "flying" (local p < 1)
+    let active = false;
+
+    // We don't want to clear the whole canvas if we are just spraying
+    // But we need to move the grains. This is a bit tricky with existing smudge.
+    // For now, we'll draw the "landing" trail.
+
+    for (let i = 0; i < APP.pixelParticles.length; i++) {
+        const p = APP.pixelParticles[i];
+        if (p.p < 1) {
+            p.p += 0.1; // Spray speed
+            const x = p.cur.x + (p.land.x - p.cur.x) * p.p;
+            const y = p.cur.y + (p.land.y - p.cur.y) * p.p;
+
+            ctx.fillStyle = p.color;
+            ctx.fillRect(x, y, 2, 2);
+            active = true;
         }
     }
+
+    if (active && APP.isMouseDown) requestAnimationFrame(renderSpray);
 }
 
 function pixelSort(mx, my) {
@@ -1319,24 +1350,24 @@ function pixelSort(mx, my) {
 
 function loadRandomPixelImage() {
     const img = new Image();
-    img.crossOrigin = "anonymous"; // Lowercase for safety
+    img.crossOrigin = "anonymous";
     img.onload = () => {
         const ctx = elPixelCanvas.getContext('2d');
         const rect = elPixelCanvas.parentElement.getBoundingClientRect();
-        const maxW = rect.width || 800, maxH = (rect.height - 40) || 600;
+        // Use a container default if hidden
+        const maxW = (rect.width > 0) ? rect.width : 800;
+        const maxH = (rect.height > 40) ? (rect.height - 40) : 600;
 
         const ratio = Math.min(maxW / img.width, maxH / img.height);
-        const w = img.width * ratio, h = img.height * ratio;
+        const w = Math.floor(img.width * ratio), h = Math.floor(img.height * ratio);
 
         elPixelCanvas.width = w; elPixelCanvas.height = h;
         ctx.drawImage(img, 0, 0, w, h);
         APP.pixelOriginalData = ctx.getImageData(0, 0, w, h);
+        APP.pixelParticles = []; // Clear old state
         setStatus(t('status_finished'));
     };
-    img.onerror = () => {
-        setStatus("Image failed to load");
-    };
-    // Use a specific image to avoid some picsum redirects that block CORS
+    img.onerror = () => setStatus("Default image load failed");
     img.src = `https://picsum.photos/800/600?random=${Date.now()}`;
     setStatus(t('status_running'));
 }
@@ -1347,24 +1378,33 @@ function animatePixelHeal() {
     const width = elPixelCanvas.width;
     const height = elPixelCanvas.height;
 
-    // Use recorded particles if they exist, otherwise generate a "Swarm"
-    let particles = APP.pixelParticles;
-    const isSwarm = particles.length === 0;
+    const particles = [];
 
-    if (isSwarm) {
-        // Generate a swarm for smudge/sort/mask distortions
-        // We'll sample 10,000 points and have them "fly" to their spots
-        const step = Math.max(1, Math.floor((width * height) / 8000));
-        const orig = APP.pixelOriginalData.data;
+    // 1. Add all tracked Mystery Grains (Physical move from current location -> home)
+    APP.pixelParticles.forEach(p => {
+        // Find where it is currently (lerped between mouse and land spot)
+        const currentX = p.cur.x + (p.land.x - p.cur.x) * (p.p || 0);
+        const currentY = p.cur.y + (p.land.y - p.cur.y) * (p.p || 0);
+        particles.push({
+            color: p.color,
+            cur: { x: currentX, y: currentY }, // Where it is NOW
+            tar: { x: p.tar.x, y: p.tar.y }                        // Where it SHOULD GO (Home)
+        });
+    });
+
+    // 2. If no grains, create a Swarm from current visible pixels (for smudge/sort)
+    if (particles.length === 0) {
+        const currentData = ctx.getImageData(0, 0, width, height).data;
+        const step = Math.max(1, Math.floor((width * height) / 20000)); // Denser sampling
         for (let y = 0; y < height; y += Math.sqrt(step)) {
             for (let x = 0; x < width; x += Math.sqrt(step)) {
-                const i = (Math.floor(y) * width + Math.floor(x)) * 4;
-                if (orig[i + 3] > 0) {
+                const ix = Math.floor(x), iy = Math.floor(y);
+                const i = (iy * width + ix) * 4;
+                if (currentData[i + 3] > 10) {
                     particles.push({
-                        color: `rgba(${orig[i]},${orig[i + 1]},${orig[i + 2]},${orig[i + 3] / 255})`,
-                        // Start slightly offset/randomized for "gathering" look
-                        cur: { x: x + (Math.random() - 0.5) * 100, y: y + (Math.random() - 0.5) * 100 },
-                        tar: { x: x, y: y }
+                        color: `rgba(${currentData[i]},${currentData[i + 1]},${currentData[i + 2]},${currentData[i + 3] / 255})`,
+                        cur: { x: ix, y: iy },
+                        tar: { x: ix, y: iy } // Swarm mode: gathered back to original mapping
                     });
                 }
             }
@@ -1378,91 +1418,25 @@ function animatePixelHeal() {
     function frame(time) {
         const elapsed = time - startTime;
         const progress = Math.min(elapsed / duration, 1);
-
-        // Cubic Ease Out
         const ease = 1 - Math.pow(1 - progress, 3);
 
         ctx.clearRect(0, 0, width, height);
 
-        // Performance optimization: we use fillRect for particles
-        // For large images, this is faster than full-canvas manipulation for sparse data
         for (let i = 0; i < particles.length; i++) {
             const p = particles[i];
+            // FLY from cur to tar
             const x = p.cur.x + (p.tar.x - p.cur.x) * ease;
             const y = p.cur.y + (p.tar.y - p.cur.y) * ease;
 
             ctx.fillStyle = p.color;
-            ctx.fillRect(x, y, 2, 2);
+            ctx.fillRect(x, y, 1.5, 1.5);
         }
 
         if (progress < 1) {
             requestAnimationFrame(frame);
         } else {
             APP.isRunning = false;
-            APP.pixelParticles = []; // Clear particles
-            // Final snap to original data for perfect pixel match
-            ctx.putImageData(APP.pixelOriginalData, 0, 0);
-            setStatus(t('status_finished'));
-        }
-    }
-
-    setStatus(t('status_running'));
-    requestAnimationFrame(frame);
-}
-
-function animatePixelScanHeal() {
-    if (APP.isRunning || !APP.pixelOriginalData) return;
-    const ctx = elPixelCanvas.getContext('2d');
-    const width = elPixelCanvas.width, height = elPixelCanvas.height;
-
-    // Use swarm-like particle generation for the scan effect
-    const particles = [];
-    const step = Math.max(1, Math.floor((width * height) / 8000));
-    const orig = APP.pixelOriginalData.data;
-
-    for (let y = 0; y < height; y += Math.sqrt(step)) {
-        for (let x = 0; x < width; x += Math.sqrt(step)) {
-            const i = (Math.floor(y) * width + Math.floor(x)) * 4;
-            if (orig[i + 3] > 0) {
-                particles.push({
-                    color: `rgba(${orig[i]},${orig[i + 1]},${orig[i + 2]},${orig[i + 3] / 255})`,
-                    // Scan starts from random scattered positions or just the top
-                    cur: { x: x + (Math.random() - 0.5) * 50, y: y - 100 }, // Fall from top
-                    tar: { x: x, y: y },
-                    delay: y / height // Normalized arrival delay
-                });
-            }
-        }
-    }
-
-    APP.isRunning = true;
-    const duration = 2500;
-    const startTime = performance.now();
-
-    function frame(time) {
-        const elapsed = time - startTime;
-        const globalProgress = Math.min(elapsed / duration, 1);
-
-        ctx.clearRect(0, 0, width, height);
-
-        for (let i = 0; i < particles.length; i++) {
-            const p = particles[i];
-            // Particle starts moving after its specific delay
-            // We scale the individual progress to make it look like a wave
-            const pProgress = Math.min(Math.max(globalProgress * 2.0 - p.delay, 0), 1);
-            const ease = 1 - Math.pow(1 - pProgress, 3);
-
-            const x = p.cur.x + (p.tar.x - p.cur.x) * ease;
-            const y = p.cur.y + (p.tar.y - p.cur.y) * ease;
-
-            ctx.fillStyle = p.color;
-            ctx.fillRect(x, y, 2, 2);
-        }
-
-        if (globalProgress < 1) {
-            requestAnimationFrame(frame);
-        } else {
-            APP.isRunning = false;
+            APP.pixelParticles = [];
             ctx.putImageData(APP.pixelOriginalData, 0, 0);
             setStatus(t('status_finished'));
         }
