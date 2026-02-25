@@ -49,7 +49,17 @@ const TRANSLATIONS = {
         game_no: "No",
         prompt_bubble: "Compare <b>[{0}]</b> and <b>[{1}]</b>.<br>Should we swap?",
         prompt_bubble_img: "Is Left Image Slice > Right Image Slice? (Index {0} vs {1})",
-        prompt_selection: "Check if Right is smaller?"
+        prompt_selection: "Check if Right is smaller?",
+        doc_title: "Algorithm Playground & Developer Guide",
+        doc_intro: "Welcome to the ultimate JavaScript Algorithm Playground. Explore sorting, pathfinding, maze generation, and pixel manipulation in real-time.",
+        doc_sort_title: "1. Sorting Algorithms Visualizer",
+        doc_sort_desc: "Explore Bubble Sort, Quick Sort, and more. Use Code Mode for custom scripts or Game Mode to test your intuition.",
+        doc_path_title: "2. Pathfinding & Maze Generation",
+        doc_path_desc: "Visualize BFS, A*, and DFS. Use the Maze Generator to create complex procedurally generated maps.",
+        doc_pixel_title: "3. Pixel Master: Creative Manipulation",
+        doc_pixel_desc: "Low-level image processing with Canvas. Smudge, Mask, and Sand effects with a custom physical restoration engine.",
+        doc_misc_title: "4. Cellular Automata & Optimization",
+        doc_misc_desc: "Simulate Conway's Game of Life and solve Traveling Salesman Problem (TSP) using Nearest Neighbor heuristics."
     },
     ko: {
         tab_sorting: "정렬 (Sorting)",
@@ -84,7 +94,17 @@ const TRANSLATIONS = {
         game_no: "아니요",
         prompt_bubble: "<b>[{0}]</b> 값과 <b>[{1}]</b> 값을 비교하세요.<br>교환해야 할까요?",
         prompt_bubble_img: "왼쪽 이미지가 오른쪽보다 큰가요? (인덱스 {0} vs {1})",
-        prompt_selection: "오른쪽 값이 현재 최솟값보다 작은가요?"
+        prompt_selection: "오른쪽 값이 현재 최솟값보다 작은가요?",
+        doc_title: "알고리즘 플레이그라운드 & 개발자 가이드",
+        doc_intro: "최고의 자바스크립트 알고리즘 실습 공간에 오신 것을 환영합니다. 정렬, 길찾기, 미로 생성, 픽셀 조작을 실시간으로 탐색해 보세요.",
+        doc_sort_title: "1. 정렬 알고리즘 시각화",
+        doc_sort_desc: "버블 정렬, 퀵 정렬, 병합 정렬 등을 확인하세요. 직접 코딩하거나 게임 모드를 통해 직관을 테스트할 수 있습니다. 60FPS의 정밀한 애니메이션으로 시간 복잡도의 원리를 이해할 수 있습니다.",
+        doc_path_title: "2. 길찾기 및 미로 생성",
+        doc_path_desc: "AI가 어떻게 최단 경로를 찾는지 확인해 보세요. BFS, DFS, A* 알고리즘을 지원하며, 미로 생성기와 연동하여 복잡한 지형을 탐험할 수 있습니다.",
+        doc_pixel_title: "3. 픽셀 마스터: 창의적 조작",
+        doc_pixel_desc: "HTML5 Canvas를 이용한 픽셀 단위 이미지 처리 도구입니다. 리퀴파이(Smudge), 마스킹, 샌드 스캐터 효과와 더불어, 픽셀 하나하나가 제자리를 찾아가는 물리 기반 복구 애니메이션을 감상할 수 있습니다.",
+        doc_misc_title: "4. 세포 자동자 및 최적화",
+        doc_misc_desc: "간단한 규칙이 만드는 복잡한 생명 현상을 보여주는 '생명 게임'과, 도시 사이의 최적 경로를 찾는 '외판원 문제(TSP)' 해결 과정을 통해 최적화 알고리즘의 매력을 느껴보세요."
     }
 };
 
@@ -1450,6 +1470,19 @@ if (btnEditorToggle) {
         const pane = document.querySelector('.editor-pane');
         pane.classList.toggle('collapsed');
         btnEditorToggle.textContent = pane.classList.contains('collapsed') ? 'Show Editor' : 'Hide Editor';
+    });
+}
+
+// Sharing Feature
+const btnShare = document.getElementById('btnShare');
+if (btnShare) {
+    btnShare.addEventListener('click', () => {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url).then(() => {
+            const originalText = btnShare.textContent;
+            btnShare.textContent = '✅ Copied!';
+            setTimeout(() => btnShare.textContent = originalText, 2000);
+        });
     });
 }
 

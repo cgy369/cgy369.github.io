@@ -4,7 +4,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JS Sorting Playground | Code & Visualize</title>
+    <title>JS Sorting Playground | Algorithm Visualizer & Developer Tools</title>
+    <meta name="description"
+        content="Explore and visualize complex algorithms in real-time. JavaScript Playground for Sorting, Pathfinding, Maze Generation, and Pixel Manipulation. Educational tool for developers and students.">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://cgy369.github.io/">
+    <meta property="og:title" content="JS Sorting Playground | Algorithm Visualizer">
+    <meta property="og:description"
+        content="Visualize complex algorithms in real-time. Interactive tools for Sorting, Pathfinding, and Pixel Art.">
+    <meta property="og:image" content="https://cgy369.github.io/assets/preview.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://cgy369.github.io/">
+    <meta property="twitter:title" content="JS Sorting Playground | Algorithm Visualizer">
+    <meta property="twitter:description"
+        content="Visualize complex algorithms in real-time. Interactive tools for Sorting, Pathfinding, and Pixel Art.">
+    <meta property="twitter:image" content="https://cgy369.github.io/assets/preview.png">
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "JS Sorting Playground",
+      "operatingSystem": "Web",
+      "applicationCategory": "EducationalApplication",
+      "description": "Interactive algorithm visualizer for sorting, pathfinding, and pixel manipulation.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0"
+      }
+    }
+    </script>
+
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -37,6 +72,8 @@
                     <option value="en">🇺🇸 EN</option>
                     <option value="ko" selected>🇰🇷 KO</option>
                 </select>
+                <button id="btnShare" class="btn secondary sm" style="margin-left: 10px;" title="Share this tool">🔗
+                    Share</button>
             </div>
 
             <div class="controls">
@@ -211,6 +248,53 @@
                 <canvas id="pixelCanvas" class="hidden"></canvas>
             </section>
         </main>
+
+        <!-- Algorithm Documentation & SEO Content -->
+        <article class="site-documentation">
+            <div class="doc-content">
+                <h1 data-i18n="doc_title">Algorithm Playground & Developer Guide</h1>
+                <p data-i18n="doc_intro">Welcome to the ultimate JavaScript Algorithm Playground. This platform is
+                    designed for developers, students, and algorithm enthusiasts to visualize, implement, and experiment
+                    with various computational patterns. From high-speed sorting to complex pathfinding, explore the
+                    beauty of logic through interactive simulations.</p>
+
+                <section>
+                    <h2 data-i18n="doc_sort_title">1. Sorting Algorithms Visualizer</h2>
+                    <p data-i18n="doc_sort_desc">Sorting is the bedrock of computer science. Our visualizer supports
+                        Bubble Sort, Quick Sort, Merge Sort, and more. Use the <b>Code Mode</b> to inject your own
+                        custom sorting logic or use the <b>Game Mode</b> to test your intuition by manually comparing
+                        and swapping elements. The visualizer handles thousands of elements with 60FPS precision,
+                        providing insights into time complexity and execution flow.</p>
+                </section>
+
+                <section>
+                    <h2 data-i18n="doc_path_title">2. Pathfinding & Maze Generation</h2>
+                    <p data-i18n="doc_path_desc">Explore how AI finds the shortest path. We implement Breadth-First
+                        Search (BFS), Depth-First Search (DFS), and A* Search. Combine these with our <b>Recursive
+                            Backtracker Maze Generator</b> to see how pathfinding algorithms navigate complex,
+                        procedurally generated environments. You can draw walls, move start/end points, and watch the
+                        algorithm "think" in real-time.</p>
+                </section>
+
+                <section>
+                    <h2 data-i18n="doc_pixel_title">3. Pixel Master: Creative Manipulation</h2>
+                    <p data-i18n="doc_pixel_desc">The Pixel Master tool demonstrates low-level image processing. Using
+                        HTML5 Canvas, we manipulate individual pixel data to create effects like <b>Liquify
+                            (Smudge)</b>, <b>Global Color Masking</b>, and the magical <b>Sand Scatter</b>. Our physical
+                        heal engine ensures that every distorted pixel remembers its origin, flying back through 3D-like
+                        particle animations to reconstruct the original image.</p>
+                </section>
+
+                <section>
+                    <h2 data-i18n="doc_misc_title">4. Cellular Automata & Optimization</h2>
+                    <p data-i18n="doc_misc_desc">Simulation is power. <b>Conway's Game of Life</b> shows how simple
+                        rules create complex biological-like structures. Meanwhile, our <b>Traveling Salesman Problem
+                            (TSP)</b> solver uses heuristic approaches like the Nearest Neighbor algorithm to find
+                        optimal paths in a network of cities, demonstrating the challenges of NP-hard optimization
+                        problems.</p>
+                </section>
+            </div>
+        </article>
 
         <!-- Footer / Ad Space -->
         <footer class="ad-footer">
